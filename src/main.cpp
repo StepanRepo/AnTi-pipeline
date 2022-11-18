@@ -4,6 +4,7 @@
 #include<ctime>
 
 #include"../lib/raw_profile.h"
+#include"../lib/int_profile.h"
 
 using namespace std;
 
@@ -12,10 +13,11 @@ int main ()//(int argc, char *argv[])
 {
 	string file_name = "190122_0329+54_00";
 	Raw_profile raw(file_name);
+	
+	Int_profile int_prf(raw);
 
-	//cout << "end of class initializing" << endl;
 
-	ofstream out ("1.prf");
+	ofstream out ("out/chanels.prf");
 	for (int i = 0; i < 570; i++)
 	{
 		for (int k = 0; k < 512; k++)
@@ -23,8 +25,15 @@ int main ()//(int argc, char *argv[])
 
 		out << endl;
 	}
+	out.close();
 
 
+	ofstream out1 ("out/int.prf");
+	for (int i = 0; i < 570; i++)
+	{
+		out1 << int_prf.profile[i] << endl;
+	}
+	out1.close();
 
 
 }
