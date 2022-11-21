@@ -1,9 +1,10 @@
+errors = -Wall -Wextra -pedantic
 
-main: .o/raw_profile.o .o/int_profile.o .o/main.o
-	g++ -O3 $^ -I./lib -L./lib  -o $@
+main: .o/custom_time.o .o/session_info.o .o/raw_profile.o .o/int_profile.o .o/main.o
+	g++ $(errors) -O3 $^ -I./lib -L./lib  -o $@
 
 .o/%.o: src/%.cpp
-	g++ -O3 -c $^ -I./lib -L./lib -o $@
+	g++ $(errors) -O3 -c $^ -I./lib -L./lib -o $@
 
 run: main
 	clear

@@ -16,6 +16,13 @@ int main ()//(int argc, char *argv[])
 	
 	Int_profile int_prf(raw);
 
+	cout << endl;
+	cout << raw.session_info.get_START_DATE().get_YEAR() << endl;
+	cout << raw.session_info.get_START_DATE().get_MONTH() << endl;
+	cout << raw.session_info.get_START_DATE().get_DAY() << endl;
+	cout << raw.session_info.get_START_DATE().get_HOUR() << endl;
+	cout << raw.session_info.get_START_DATE().get_MINUTE() << endl;
+	cout << raw.session_info.get_START_DATE().get_SECOND() << endl;
 
 	ofstream out ("out/chanels.prf");
 	for (int i = 0; i < 570; i++)
@@ -26,6 +33,7 @@ int main ()//(int argc, char *argv[])
 		out << endl;
 	}
 	out.close();
+
 
 
 	ofstream out1 ("out/int.prf");

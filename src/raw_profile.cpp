@@ -1,43 +1,44 @@
 #include"../lib/raw_profile.h"
-#include"string"
+#include"../lib/session_info.h"
+
+#include<string>
 #include<fstream>
 #include <iostream>
 
 using namespace std;
 
-Raw_profile::Raw_profile(string file_name)
+Raw_profile::Raw_profile(string file_name) : session_info()
 {
     //from header
+    fill_header(file_name);
 
-    Raw_profile::tau = 1.2288;
-    Raw_profile::total_pulses = 464;
-    Raw_profile::obs_window = 570;
-    Raw_profile::chanels = 512;
+    int total_pulses = session_info.get_TOTAL_PULSES();
+    int obs_window = session_info.get_OBS_WINDOW();
+    int chanels = session_info.get_CHANELS();
+
+    OBS_SIZE = total_pulses*obs_window*chanels;
+
+
+    data = new byte32 [OBS_SIZE];
+    read_data(file_name);
+
+    signal = new double [OBS_SIZE];
+    decode_data();
     
-    Raw_profile::OBS_SIZE = total_pulses*obs_window*chanels;
-
-    Raw_profile::data = new byte32 [OBS_SIZE];
-    Raw_profile::read_data(file_name);
-
-    Raw_profile::signal = new double [OBS_SIZE];
-    Raw_profile::decode_data();
     
-    //delete[] Raw_profile::data;
-    //delete[] Raw_profile::signal;
-    
-    Raw_profile::signal_per_chanel = new double* [chanels];
+	signal_per_chanel = vector (chanels, vector<double>(obs_window));
+	   
+    split_data();
+}
 
-    for (int i = 0; i < chanels; i++)
-    {
-        Raw_profile::signal_per_chanel[i] = new double [obs_window];
-    }
-
-    Raw_profile::split_data();
+Raw_profile::~Raw_profile()
+{
+    delete[] Raw_profile::signal;
+    delete[] Raw_profile::data;
 }
 
 
-
-void Raw_profile::read_data(string file_name)
+void Raw_profile::fill_header(string file_name)
 {
     cout << "Reading header . . ." << endl;
 
@@ -47,21 +48,34 @@ void Raw_profile::read_data(string file_name)
 	for (int i = 0; i < 13; i++)
 	{
 		obs_file.read(header_buffer, 40);
-		cout << header_buffer << endl;
+		Raw_profile::session_info.add_parameter(header_buffer);
 	}	
+
+	obs_file.close();
+}
+
+void Raw_profile::read_data(string file_name)
+{
+    cout << "Reading data . . ." << endl;
+
+	ifstream obs_file (file_name, ios::in | ios::binary);
+
+	// skip header of file
+	char header_buffer[40];
+	for (int i = 0; i < 13; i++)
+		obs_file.read(header_buffer, 40);
+
 
 	int i = 0;
 
-    cout << "Reading data . . ." << endl;
-
 	while(obs_file.good())
 	{
-		obs_file.read((Raw_profile::data[i].as_char), 4);
+		obs_file.read((data[i].as_char), 4);
 		i++;
 	}
 	obs_file.close();
 
-    if (i-1 != Raw_profile::OBS_SIZE)
+    if (i-1 != OBS_SIZE)
         cout << "ERROR WHILE READING DATA" << endl;
 }
 
@@ -71,22 +85,22 @@ void Raw_profile::decode_data()
 
 
 	double exp, spectr_t;
-	double ratio = tau/0.2048;
+	double ratio = session_info.get_TAU()/0.2048;
 
-	#pragma clang loop vectorize(assume_safety)
+	//#pragma clang loop vectorize(assume_safety)
 	for (int i = 0; i < OBS_SIZE; i++)
 	{
-		spectr_t = double (Raw_profile::data[i].as_int & 0xFFFFFF);
+		spectr_t = double (data[i].as_int & 0xFFFFFF);
 
-		exp = double ( (Raw_profile::data[i].as_int & 0x7F000000) >> 24 );
+		exp = double ( (data[i].as_int & 0x7F000000) >> 24 );
 		exp -= 64.0;
 
-		exp = double(2 << (int) exp);
+		exp = double(1llu << (unsigned long long) exp);
 
 		spectr_t = spectr_t*exp/ratio;
 		spectr_t = spectr_t*1.3565771745707199e-14;
 
-		Raw_profile::signal[i] = spectr_t;
+		signal[i] = spectr_t;
 	}
 }
 
@@ -94,13 +108,12 @@ void Raw_profile::split_data ()
 {
     cout << "Splitting data . . ." << endl;
 
+    int total_pulses = session_info.get_TOTAL_PULSES();
+    int obs_window = session_info.get_OBS_WINDOW();
+    int chanels = session_info.get_CHANELS();
+
 	for (int i = 0; i < 512; i++)
-	{
-		for (int k = 0; k < 570; k ++)
-		{
-			Raw_profile::signal_per_chanel[i][k] = 0.0;
-		}
-	}
+		fill(signal_per_chanel[i].begin(), signal_per_chanel[i].end(), 0.0);
 
     int chan_and_window = chanels*obs_window;
 
@@ -110,9 +123,14 @@ void Raw_profile::split_data ()
 		{
 			for (int i = 0; i < chanels; i++)
 			{
-				Raw_profile::signal_per_chanel[i][k] += Raw_profile::signal[i + k*chanels + imp*chan_and_window];
+				signal_per_chanel[i][k] += signal[i + k*chanels + imp*chan_and_window];
 			}
 		}
 	}
+}
+
+double Raw_profile::get_RAW_SIGNAL(int i)
+{
+	return signal[i];
 }
 
