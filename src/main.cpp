@@ -5,6 +5,8 @@
 
 #include"../lib/raw_profile.h"
 #include"../lib/int_profile.h"
+#include"../lib/etalon_profile.h"
+
 
 using namespace std;
 
@@ -16,13 +18,12 @@ int main ()//(int argc, char *argv[])
 	
 	Int_profile int_prf(raw);
 
-	cout << endl;
-	cout << raw.session_info.get_START_DATE().get_YEAR() << endl;
-	cout << raw.session_info.get_START_DATE().get_MONTH() << endl;
-	cout << raw.session_info.get_START_DATE().get_DAY() << endl;
-	cout << raw.session_info.get_START_DATE().get_HOUR() << endl;
-	cout << raw.session_info.get_START_DATE().get_MINUTE() << endl;
-	cout << raw.session_info.get_START_DATE().get_SECOND() << endl;
+	Etalon_profile etalon_prf("0329+54.tpl");
+
+
+	int_prf.get_TOA(etalon_prf);
+
+
 
 	ofstream out ("out/chanels.prf");
 	for (int i = 0; i < 570; i++)
@@ -34,14 +35,10 @@ int main ()//(int argc, char *argv[])
 	}
 	out.close();
 
-
-
 	ofstream out1 ("out/int.prf");
 	for (int i = 0; i < 570; i++)
 	{
-		out1 << int_prf.profile[i] << endl;
+		out1 << int_prf.profile[(i+219)%570] << endl;
 	}
 	out1.close();
-
-
 }

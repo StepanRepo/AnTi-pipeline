@@ -12,6 +12,7 @@ class Session_info
 {
 public:
 	Session_info();
+	Session_info(string file_name);
 
 	void add_parameter(char* buffer);
 

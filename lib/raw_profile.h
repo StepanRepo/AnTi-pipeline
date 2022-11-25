@@ -30,7 +30,6 @@ class Raw_profile
         byte32* data;
         double* signal;
         
-        void fill_header (std::string file_name);
         void read_data (std::string file_name);
         void decode_data ();
         void split_data ();

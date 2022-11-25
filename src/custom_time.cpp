@@ -2,6 +2,7 @@
 
 #include<iostream>
 #include<string>
+#include<algorithm>
 #include <stdexcept>
 
 
@@ -13,25 +14,23 @@ Custom_time::Custom_time (string time_s)
 
 	try
 	{
+		time_s.erase(std::remove_if(time_s.begin(), time_s.end(), ::isspace), time_s.end());
+
 		day = stoi(time_s.substr(0, 2));
 		month = stoi(time_s.substr(3, 2));
 		year = stoi(time_s.substr(6, 4));
 
-		hour = stoi(time_s.substr(11, 2));
-		minute = stoi(time_s.substr(14, 2));
+		hour = stoi(time_s.substr(10, 2));
+		minute = stoi(time_s.substr(13, 2));
 
-		time_s.erase(19, 1);
-		time_s[19] = '.';
-		second = stod(time_s.substr(17));
+		second = stod(time_s.substr(16,2) + "." + time_s.substr(18));
 	}
 	catch (const std::invalid_argument &error)
 	{
 		cout << "fuck: " << time_s << endl;
 	}
 
-
 	mjd = 0.0l;
-
 }
 
 Custom_time::Custom_time (int yr, int mnth, int d, int h, int m, long double s)
@@ -56,7 +55,15 @@ long double Custom_time::get_MJD()
 
 void Custom_time::calculate_mjd()
 {
-	mjd = -1.0l;
+	int y = (long double) year;
+	int m = (long double) month;
+	int d = (long double) day;
+	long double h = (long double) hour;
+	long double min = (long double) minute;
+	long double s = (long double) second;
+
+	mjd = (long double) (367*y - 7*(y + (m + 9)/12)/4 - 3*(1 + (y + (m - 9)/7)/100)/4 + 275*m/9 + d);
+	mjd += 1721028.0l - 2400000.0l + h/24.0l + min/1440.0l + s/86400.0l;
 }
 
 

@@ -7,11 +7,8 @@
 
 using namespace std;
 
-Raw_profile::Raw_profile(string file_name) : session_info()
+Raw_profile::Raw_profile(string file_name) : session_info(file_name)
 {
-    //from header
-    fill_header(file_name);
-
     int total_pulses = session_info.get_TOTAL_PULSES();
     int obs_window = session_info.get_OBS_WINDOW();
     int chanels = session_info.get_CHANELS();
@@ -38,22 +35,6 @@ Raw_profile::~Raw_profile()
 }
 
 
-void Raw_profile::fill_header(string file_name)
-{
-    cout << "Reading header . . ." << endl;
-
-	ifstream obs_file (file_name, ios::in | ios::binary);
-	char header_buffer[40];
-
-	for (int i = 0; i < 13; i++)
-	{
-		obs_file.read(header_buffer, 40);
-		Raw_profile::session_info.add_parameter(header_buffer);
-	}	
-
-	obs_file.close();
-}
-
 void Raw_profile::read_data(string file_name)
 {
     cout << "Reading data . . ." << endl;
@@ -61,9 +42,8 @@ void Raw_profile::read_data(string file_name)
 	ifstream obs_file (file_name, ios::in | ios::binary);
 
 	// skip header of file
-	char header_buffer[40];
-	for (int i = 0; i < 13; i++)
-		obs_file.read(header_buffer, 40);
+	for (int i = 0; i < session_info.get_NUM_PARAMS(); i++)
+		obs_file.ignore(40, '\n');
 
 
 	int i = 0;
