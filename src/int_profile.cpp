@@ -16,18 +16,43 @@ Int_profile::Int_profile(Raw_profile& raw) : session_info()
 	int obs_window = session_info.get_OBS_WINDOW();
 	int channels = session_info.get_CHANELS(); 
 
-	vector<double> chanel_delay;
-	chanel_delay.reserve(channels);
+	vector<double> chanel_delay (channels);
+	compensated_signal_per_chanel = vector (channels, vector<double>(obs_window));
 
 	calculate_chanel_delay (chanel_delay);
 	move_chanel_profiles(&raw, chanel_delay);
 
-	profile.reserve(obs_window);
+	profile = vector<double> (obs_window);
 
 	for (int j = 0; j < obs_window; j++)
 		profile[j] = 0;
 
-	average_profiles(&raw);
+	average_profiles();
+
+	normilize_profile();
+
+	toa = 0.0l;
+}
+
+Int_profile::Int_profile(Raw_profile& raw, vector<double> mask) : session_info()
+{
+	session_info = raw.session_info;
+
+	int obs_window = session_info.get_OBS_WINDOW();
+	int channels = session_info.get_CHANELS(); 
+
+	vector<double> chanel_delay (channels);
+	compensated_signal_per_chanel = vector (channels, vector<double>(obs_window));
+
+	calculate_chanel_delay (chanel_delay);
+	move_chanel_profiles(&raw, chanel_delay);
+
+	profile = vector<double> (obs_window);
+
+	for (int j = 0; j < obs_window; j++)
+		profile[j] = 0;
+
+	average_profiles(mask);
 
 	normilize_profile();
 
@@ -103,13 +128,13 @@ void Int_profile::move_chanel_profiles(Raw_profile* raw, std::vector<double>& ch
 
 		for(int j = 0; j < obs_window; j++)
 		{
-			raw->signal_per_chanel[i][j] = (1 - delta_dec)*temp_1[j] + delta_dec*temp_2[j];
+			compensated_signal_per_chanel[i][j] = (1 - delta_dec)*temp_1[j] + delta_dec*temp_2[j];
 		}
 	}
 }
 
 
-void Int_profile::average_profiles(Raw_profile* raw)
+void Int_profile::average_profiles()
 {
 	cout << "Averaging chanel profiles . . ." << endl;
 
@@ -120,7 +145,23 @@ void Int_profile::average_profiles(Raw_profile* raw)
 	{
 		for (int i = 0; i < chanels; i++)
 		{
-			profile[j] += raw->signal_per_chanel[i][j];
+			profile[j] += compensated_signal_per_chanel[i][j];
+		}
+	}
+}
+
+void Int_profile::average_profiles(vector<double> mask)
+{
+	cout << "Averaging chanel profiles whith mask . . ." << endl;
+
+	int chanels = session_info.get_CHANELS();
+	int obs_window = session_info.get_OBS_WINDOW();
+
+	for (int j = 0; j < obs_window; j++)
+	{
+		for (int i = 0; i < chanels; i++)
+		{
+			profile[j] += mask[i]*compensated_signal_per_chanel[i][j];
 		}
 	}
 }

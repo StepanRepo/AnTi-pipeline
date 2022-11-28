@@ -1,5 +1,6 @@
 #include <vector>
 #include <algorithm>
+#include <cmath>
 
 #include<iostream>
 
@@ -19,6 +20,70 @@ double median (vector<double>& vec)
 
 	return median;
 }
+
+double median (vector<double>& vec, int begin, int end)
+{
+	if (begin < 0) begin = 0;
+	if (end >= (int) vec.size()) end = vec.size() - 1;
+
+	vector<double> a (&vec[begin], &vec[end]);
+
+	return median(a);
+}
+
+
+double mean (vector<double>& vec)
+{
+	vector<double> a = vec;
+	double mean = 0.0;
+
+	for (int i = 0; i < (int) a.size(); i++)
+		mean += a[i];
+
+	return mean/double(a.size());
+}
+
+double mean (vector<double>& vec, int begin, int end)
+{
+	if (begin < 0) begin = 0;
+	if (end >= (int) vec.size()) end = vec.size() - 1;
+
+	vector<double> a (&vec[begin], &vec[end]);
+
+	return mean(a);
+}
+
+
+double sigma(vector<double>& vec)
+{
+	vector<double> a = vec;
+
+	double deviation = 0.0;
+	int n = a.size();
+
+	double m = mean(a);
+
+	for (int i = 0; i < (int) a.size(); i++)
+		deviation += (a[i] - m)*(a[i] - m);
+
+	deviation = sqrt(deviation/double(n-1));
+
+	return deviation;
+}
+
+double sigma(vector<double>& vec, int begin, int end)
+{
+	if (begin < 0) begin = 0;
+	if (end >= (int) vec.size()) end = vec.size() - 1;
+
+	vector<double> a (&vec[begin], &vec[end]);
+
+	return sigma(a);
+}
+
+
+
+
 
 double discrete_ccf (vector<double>& first, vector<double>& second, int delta)
 {

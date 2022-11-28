@@ -9,35 +9,35 @@ using namespace std;
 
 Raw_profile::Raw_profile(string file_name) : session_info(file_name)
 {
-    int total_pulses = session_info.get_TOTAL_PULSES();
-    int obs_window = session_info.get_OBS_WINDOW();
-    int chanels = session_info.get_CHANELS();
+	int total_pulses = session_info.get_TOTAL_PULSES();
+	int obs_window = session_info.get_OBS_WINDOW();
+	int chanels = session_info.get_CHANELS();
 
-    OBS_SIZE = total_pulses*obs_window*chanels;
+	OBS_SIZE = total_pulses*obs_window*chanels;
 
 
-    data = new byte32 [OBS_SIZE];
-    read_data(file_name);
+	data = new byte32 [OBS_SIZE];
+	read_data(file_name);
 
-    signal = new double [OBS_SIZE];
-    decode_data();
-    
-    
+	signal = new double [OBS_SIZE];
+	decode_data();
+
+
 	signal_per_chanel = vector (chanels, vector<double>(obs_window));
-	   
-    split_data();
+
+	split_data();
 }
 
 Raw_profile::~Raw_profile()
 {
-    delete[] Raw_profile::signal;
-    delete[] Raw_profile::data;
+	delete[] Raw_profile::signal;
+	delete[] Raw_profile::data;
 }
 
 
 void Raw_profile::read_data(string file_name)
 {
-    cout << "Reading data . . ." << endl;
+	cout << "Reading data . . ." << endl;
 
 	ifstream obs_file (file_name, ios::in | ios::binary);
 
@@ -55,13 +55,13 @@ void Raw_profile::read_data(string file_name)
 	}
 	obs_file.close();
 
-    if (i-1 != OBS_SIZE)
-        cout << "ERROR WHILE READING DATA" << endl;
+	if (i-1 != OBS_SIZE)
+		cout << "ERROR WHILE READING DATA" << endl;
 }
 
 void Raw_profile::decode_data()
 {
-    cout << "Decoding data . . ." << endl;
+	cout << "Decoding data . . ." << endl;
 
 
 	double exp, spectr_t;
@@ -86,16 +86,16 @@ void Raw_profile::decode_data()
 
 void Raw_profile::split_data ()
 {
-    cout << "Splitting data . . ." << endl;
+	cout << "Splitting data . . ." << endl;
 
-    int total_pulses = session_info.get_TOTAL_PULSES();
-    int obs_window = session_info.get_OBS_WINDOW();
-    int chanels = session_info.get_CHANELS();
+	int total_pulses = session_info.get_TOTAL_PULSES();
+	int obs_window = session_info.get_OBS_WINDOW();
+	int chanels = session_info.get_CHANELS();
 
 	for (int i = 0; i < 512; i++)
 		fill(signal_per_chanel[i].begin(), signal_per_chanel[i].end(), 0.0);
 
-    int chan_and_window = chanels*obs_window;
+	int chan_and_window = chanels*obs_window;
 
 	for (int imp = 0; imp < total_pulses; imp ++)
 	{

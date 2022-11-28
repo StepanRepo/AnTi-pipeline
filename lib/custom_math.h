@@ -3,6 +3,13 @@
 using namespace std;
 
 double median (vector<double>&);
+double median (vector<double>&, int, int);
+
+double mean (vector<double>&);
+double mean (vector<double>&, int, int);
+
+double sigma(vector<double>&);
+double sigma(vector<double>&, int, int);
 
 double discrete_ccf (vector<double>& first, vector<double>& second, int delta);
 
