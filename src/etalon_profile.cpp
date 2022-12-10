@@ -53,9 +53,10 @@ void Etalon_profile::fill_profile(string file_name)
 	}
 }
 
-void Etalon_profile::normilize(string out_file)
+
+void Etalon_profile::normilize()
 {
-	cout << "Normilizing etalon profiles . . ." << endl;
+	cout << "Normilizing etalon profile . . ." << endl;
 
 	double min = profile[0];
 	double max = 0;
@@ -71,12 +72,8 @@ void Etalon_profile::normilize(string out_file)
 
 	for (int j = 0; j < obs_window; j++)
 		profile[j] = (profile[j] - min)/norm_factor;
-
-	ofstream out (out_file);
-
-	for (int j = 0; j < obs_window; j++)
-		out << profile[j] << endl;
 }
+
 
 
 Etalon_profile Etalon_profile::scale_profile(double tau_new)
@@ -100,6 +97,20 @@ Etalon_profile Etalon_profile::scale_profile(double tau_new)
 
 	return Etalon_profile(profile_new, tau_new, obs_window);
 
+}
+
+void Etalon_profile::print(string file_name)
+{
+	ofstream out (file_name);
+
+	out << "tau = " << tau << endl;
+	out << "numpointwin = " << obs_window << endl;
+
+
+	for (int i = 0; i < obs_window; i++)
+		out << profile[i] << endl;	
+
+	out.close();
 }
 
 double Etalon_profile::get_TAU(){return tau;}

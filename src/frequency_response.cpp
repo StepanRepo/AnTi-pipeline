@@ -14,7 +14,7 @@ Frequency_response::Frequency_response(Raw_profile& raw) : session_info()
 {
 	session_info = raw.session_info;
 
-	fill_profile(raw.signal_per_chanel);
+	fill_profile(raw.mean_signal_per_chanel);
 	fill_mask();
 
 }

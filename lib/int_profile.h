@@ -17,8 +17,16 @@ class Int_profile
 
         Int_profile(Raw_profile& raw);
         Int_profile(Raw_profile& raw, std::vector<double> mask);
+	Int_profile(std::string file_name);
 
 	long double get_TOA(Etalon_profile&);
+	double get_ERROR();
+
+	double get_SNR();
+
+	double get_FREQ_COMP();
+
+	void print(string file_name);
 
     private:
 
@@ -28,8 +36,13 @@ class Int_profile
         void average_profiles(std::vector<double> mask);
         void normilize_profile();
 
+	double freq_comp; 
+
 	long double toa;
+	double toa_error;
 	double get_reper_point(Etalon_profile&);
+
+	double snr;
 };
 
 #endif

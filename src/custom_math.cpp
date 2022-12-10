@@ -176,3 +176,26 @@ double find_root (vector<double> p, double left, double right)
 
 	return root;
 }
+
+
+
+void move_continous(vector<double>& vec, double bias)
+{
+
+	int delta_int = int(bias);
+	double delta_dec = bias - double(delta_int);
+
+	int n = vec.size();
+	vector<double> temp_1 (n), temp_2(n);
+
+
+	for (int j = 0; j < n; j ++)
+	{
+		temp_1[j] = vec[(j + delta_int) % n];
+		temp_1[j] = vec[(j + delta_int + 1) % n];
+	}
+
+	for(int j = 0; j < n; j++)
+		vec[j] = (1.0 - delta_dec)*temp_1[j] + delta_dec*temp_2[j];
+
+}

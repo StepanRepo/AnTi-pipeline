@@ -16,6 +16,8 @@ public:
 
 	void add_parameter(char* buffer);
 
+	void print(string file_name, double freq_comp = 0.0);
+
 
 	int get_NUM_PARAMS();
 

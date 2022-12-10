@@ -15,12 +15,14 @@ class Etalon_profile
 
 		vector<double> profile;
 
-		void normilize(string);
+		void normilize();
 
 		double get_TAU();
 		int get_OBS_WINDOW();
 
 		Etalon_profile scale_profile(double tau_new);
+
+		void print(string file_name);
 	private:
 		double tau;
 		int obs_window;

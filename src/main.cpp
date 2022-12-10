@@ -31,7 +31,13 @@ int main ()//(int argc, char *argv[])
 
 
 	Int_profile int_prf(raw, fr.mask);
-	int_prf.get_TOA(etalon_prf);
+	long double toa = int_prf.get_TOA(etalon_prf);
+	double toa_error = int_prf.get_ERROR();
+
+	cout.precision(24);
+	cout << endl << "TOA:  " << toa <<  " MJD" << endl;
+	cout << "SNR:  " << int_prf.get_SNR() << endl;
+	cout << "ERR:  " << toa_error*1e3 << " mcsec" << endl;
 
 
 
@@ -39,16 +45,11 @@ int main ()//(int argc, char *argv[])
 	for (int i = 0; i < 570; i++)
 	{
 		for (int k = 0; k < 512; k++)
-			out << raw.signal_per_chanel[k][i] << " ";
+			out << raw.mean_signal_per_chanel[k][i] << " ";
 
 		out << endl;
 	}
 	out.close();
 
-	ofstream out1 ("out/int.prf");
-	for (int i = 0; i < 570; i++)
-	{
-		out1 << int_prf.profile[i] << endl;
-	}
-	out1.close();
+	int_prf.print("out/int.prf");
 }

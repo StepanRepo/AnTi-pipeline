@@ -130,7 +130,7 @@ void Session_info::add_parameter(char* buffer_c)
 	if (name == "numpuls")
 		total_pulses = stoi(value);
 
-	else if (name == "tay")
+	else if (name == "tay" or name == "tau")
 		tau = stod(value);
 
 	else if (name == "numpointwin")
@@ -159,11 +159,50 @@ void Session_info::add_parameter(char* buffer_c)
 
 }
 
+void Session_info::print(string file_name, double freq_comp)
+{
+	ofstream out (file_name);
+	out.precision(12);
+
+	if (freq_comp == 0.0)
+	{
+		out << "numpar      " << 12 << endl;
+		out << "name        " << psr_name << endl;
+		out << "date        " << start_date_s << endl;
+		out << "dt_utc      " << start_utc_s << endl;
+		out << "period      " << psr_period << endl;
+		out << "numpuls     " << total_pulses << endl;
+		out << "tau         " << tau << endl;
+		out << "numpointwin " << obs_window << endl;
+		out << "sumchan     " << "no" << endl;
+		out << "dm          " << dm << endl;
+		out << "F0          " << freq_min << endl;
+		out << "F511        " << freq_max << endl;
+	}
+	else
+	{
+		out << "numpar      " << 13 << endl;
+		out << "name        " << psr_name << endl;
+		out << "date        " << start_date_s << endl;
+		out << "dt_utc      " << start_utc_s << endl;
+		out << "period      " << psr_period << endl;
+		out << "numpuls     " << total_pulses << endl;
+		out << "tau         " << tau << endl;
+		out << "numpointwin " << obs_window << endl;
+		out << "sumchan     " << "yes" << endl;;
+		out << "dm          " << dm << endl;
+		out << "F0          " << freq_min << endl;
+		out << "Fcomp       " << freq_comp << endl;
+		out << "F511        " << freq_max << endl;
+	}
+
+}
+
 void Session_info::operator=(Session_info& right)
 {
 	number_params = right.number_params;
 
-	psr_name = right.number_params;
+	psr_name = right.psr_name;
 	psr_period = right.psr_period;
 	dm = right.dm;
 
@@ -227,11 +266,10 @@ Custom_time Session_info::get_START_DATE()
 	if (start_date_s == "") 
 	{
 		cout << "Date hasn't been read!" << endl;
-		throw;
 	}
 
 	// Нужна полная проверка всех полей
-	if (start_date.get_SECOND() == 0.0l) start_date = Custom_time(start_date_s);
+	start_date = Custom_time(start_date_s);
 
 	return start_date;
 }

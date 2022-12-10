@@ -32,6 +32,12 @@ Int_profile::Int_profile(Raw_profile& raw) : session_info()
 	normilize_profile();
 
 	toa = 0.0l;
+	toa_error = 0.0l;
+
+	snr = 0.0;
+	snr = get_SNR();
+
+	freq_comp = session_info.get_FREQ_MAX();
 }
 
 Int_profile::Int_profile(Raw_profile& raw, vector<double> mask) : session_info()
@@ -57,6 +63,12 @@ Int_profile::Int_profile(Raw_profile& raw, vector<double> mask) : session_info()
 	normilize_profile();
 
 	toa = 0.0l;
+	toa_error = 0.0l;
+
+	snr = 0.0;
+	snr = get_SNR();
+
+	freq_comp = session_info.get_FREQ_MAX();
 }
 
 void Int_profile::calculate_chanel_delay(vector<double>& chanel_delay)
@@ -101,9 +113,9 @@ void Int_profile::move_chanel_profiles(Raw_profile* raw, std::vector<double>& ch
 	for (int i = 0; i < chanels; i++)
 	{
 		delta_int = int(chanel_delay[i]/tau);
-		delta_dec = chanel_delay[i] - tau*double(delta_int);
+		delta_dec = (chanel_delay[i] - tau*double(delta_int))/tau;
 
-		noise = median(raw->signal_per_chanel[i]);
+		noise = median(raw->mean_signal_per_chanel[i]);
 
 		for(int j = 0; j < obs_window; j++)
 		{
@@ -122,13 +134,13 @@ void Int_profile::move_chanel_profiles(Raw_profile* raw, std::vector<double>& ch
 				delta_dec = delay - tau*double(delta_int);
 			}
 
-			temp_1[j] = raw->signal_per_chanel[i][(j + delta_int) % obs_window];
-			temp_2[j] = raw->signal_per_chanel[i][(j + delta_int + 1) % obs_window];
+			temp_1[j] = raw->mean_signal_per_chanel[i][(j + delta_int) % obs_window];
+			temp_2[j] = raw->mean_signal_per_chanel[i][(j + delta_int + 1) % obs_window];
 		}
 
 		for(int j = 0; j < obs_window; j++)
 		{
-			compensated_signal_per_chanel[i][j] = (1 - delta_dec)*temp_1[j] + delta_dec*temp_2[j];
+			compensated_signal_per_chanel[i][j] = (1.0 - delta_dec)*temp_1[j] + delta_dec*temp_2[j];
 		}
 	}
 }
@@ -202,18 +214,14 @@ long double Int_profile::get_TOA(Etalon_profile& etalon_in)
 		cout << "Calculating TOA . . ." << endl;
 
 		// Define etalon profile and scale it if it's nesesssery
-		Etalon_profile etalon (etalon_in.profile, etalon_in.get_TAU(), etalon_in.get_OBS_WINDOW()); 
+		Etalon_profile etalon (etalon_in.profile, etalon_in.get_TAU(), etalon_in.get_OBS_WINDOW());
+		etalon = etalon.scale_profile(session_info.get_TAU());
 
 		double reper_point = get_reper_point(etalon); 
 
 		long double mjd_start = session_info.get_START_UTC().get_MJD();
 
-
-		cout.precision(16);
-		cout << mjd_start + (long double) (reper_point*session_info.get_TAU())*1e-3/86400.0l << endl;
-
-
-		return reper_point;
+		return mjd_start + (long double) (reper_point*session_info.get_TAU())*1e-3/86400.0l;
 	}
 }
 
@@ -222,14 +230,14 @@ double Int_profile::get_reper_point (Etalon_profile& etalon)
 {
 	// Calculate discrete cross-correlation 
 	// function of integral and etalon profiles
-	int etalon_len = etalon.profile.capacity();
-	int int_len = profile.capacity();
+	int etalon_len = etalon.profile.size();
+	int int_len = profile.size();
 
 	vector<double> ccf;
 	ccf.reserve(int_len + etalon_len);
 
 	for (int i = -etalon_len; i < int_len; i++)
-		ccf[i + etalon_len] = discrete_ccf(profile, etalon.profile, i);
+		ccf.push_back(discrete_ccf(profile, etalon.profile, i));
 
 	// print ccf vector to file
 	//ofstream out2 ("out/ccf");
@@ -253,6 +261,8 @@ double Int_profile::get_reper_point (Etalon_profile& etalon)
 		}
 	}
 
+	//for (int )
+
 	// Clarify the position of maximum of
 	// the continous ccf
 	vector<double> near_max;
@@ -266,17 +276,120 @@ double Int_profile::get_reper_point (Etalon_profile& etalon)
 	// the maximum of discrete ccf
 	vector<double> coefficients;
 	coefficients.reserve(5);
-		//c[0]x^4 + ... + c[4]
+	//c[0]x^4 + ... + c[4]
 	coefficients = interpolation4(near_max);
 
 
 	vector<double> derivative;
 	derivative.reserve(4);
 
-	for (int i = 0; i < 4; i++)
-		derivative.push_back(coefficients[i]);
+	derivative.push_back(4.0*coefficients[0]);
+	derivative.push_back(3.0*coefficients[1]);
+	derivative.push_back(2.0*coefficients[2]);
+	derivative.push_back(coefficients[3]);
 
 	double reper_dec =  find_root(derivative, -1.0, 1.0);
 
 	return double(max_pos - etalon_len) + reper_dec;
+}
+
+double Int_profile::get_ERROR()
+{
+	if (toa_error != 0)
+	{
+		return toa_error;
+	}
+	else
+	{
+		cout << "Calculating TOA error . . ." << endl;
+
+		int obs_window = session_info.get_OBS_WINDOW();
+		int k1 = 0, k2 = 0;
+
+		// half width full maximum level is
+		// equal 0.5 
+		double hwfm_level = 0.5;
+		//hwfm_level = 0.0;
+		//for (int i = 0; i < session_info.get_OBS_WINDOW(); i++)
+		//	if (hwfm_level < profile[i])
+		//		hwfm_level = profile[i];
+		//hwfm_level /= 2.0;
+
+		int i = 0;
+
+		while (i < obs_window)
+		{
+			if (profile[i] > hwfm_level)
+			{
+				k1 = i;
+				break;
+			}
+			i++;
+		}
+
+		while (i < obs_window)
+		{
+			if (profile[i] < hwfm_level)
+			{
+				k2 = i;
+				break;
+			}
+			i++;
+		}
+
+		toa_error = 0.3*double(k2-k1)*session_info.get_TAU()/get_SNR();	
+
+		return toa_error;
+	}
+}
+
+
+double Int_profile::get_SNR()
+{
+	if (snr != 0.0)
+	{
+		return snr;
+	}
+	else
+	{
+		int obs_window = session_info.get_OBS_WINDOW();
+
+		// find level of noise as
+		// 1.0% of maximum of signal
+
+		// max is equal 1.0
+		//for (int i = 0; i < obs_window; i++)
+		//	if (max < profile[i]) max = profile[i];
+
+		double max = 1e-1;
+
+		vector<double> noise_vec;
+		noise_vec.reserve(obs_window);
+
+		for (int i = 0; i < obs_window; i++)
+		{
+			if(profile[i] < max)
+			{
+				noise_vec.push_back(profile[i]);
+			}
+		}
+
+		double noise = sigma(noise_vec);
+
+		snr = 1.0/(noise);
+
+		return snr;
+	}
+}
+
+void Int_profile::print(string file_name)
+{
+	session_info.print(file_name, freq_comp);
+
+	ofstream out (file_name, ios_base::app);
+
+	for (int i = 0; i < session_info.get_OBS_WINDOW(); i++)
+		out << profile[i] << endl;	
+
+	out.close();
 }
