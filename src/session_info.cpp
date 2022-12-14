@@ -2,10 +2,14 @@
 #include<iostream>
 #include<fstream>
 
+#include"../lib/configuration.h"
 #include "../lib/session_info.h"
 #include "../lib/custom_time.h"
+#include"../lib/massages.h"
 
 using namespace std;
+
+extern Configuration cfg;
 
 void str_split(string buffer, string& name, string& value);
 
@@ -31,7 +35,8 @@ Session_info::Session_info() : start_date (0, 0, 0, 0, 0, 0l), start_utc (0, 0, 
 
 Session_info::Session_info(string file_name) : start_date (0, 0, 0, 0, 0, 0l), start_utc (0, 0, 0, 0, 0, 0l)
 {
-	cout << "Reading header . . ." << endl;
+	if (cfg.verbose)
+		cout << "Reading session information" << endl;
 
 
 	ifstream obs_file (file_name, ios::in | ios::binary);
@@ -109,8 +114,6 @@ void Session_info::add_parameter(char* buffer_c)
 	string name, value;
 
 	str_split(buffer, name, value);
-	cout << name << " " << value << endl;
-
 
 	if (name == "numpar")
 		number_params = stoi(value);

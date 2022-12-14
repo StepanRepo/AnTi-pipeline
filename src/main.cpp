@@ -7,15 +7,15 @@
 #include"../lib/int_profile.h"
 #include"../lib/etalon_profile.h"
 #include"../lib/frequency_response.h"
-
+#include"../lib/configuration.h"
 
 using namespace std;
 
+Configuration cfg;
 
 int main ()//(int argc, char *argv[])
 {
-	string file_name = "190122_0329+54_00";
-
+	string file_name = cfg.files[0];
 
 	Raw_profile raw(file_name);
 
@@ -24,10 +24,10 @@ int main ()//(int argc, char *argv[])
 	fr.derivative_filter(2e-2, 4);
 	fr.median_filter(1.5e0);
 
-	fr.print("out/190122_0329+54_00.fr");
-	fr.print_masked("out/masked_190122_0329+54_00.fr");
+	fr.print(cfg.output_dir + "190122_0329+54_00.fr");
+	fr.print_masked(cfg.output_dir + "masked_190122_0329+54_00.fr");
 	
-	Etalon_profile etalon_prf("0329+54.tpl");
+	Etalon_profile etalon_prf(cfg.tplfile);
 
 
 	Int_profile int_prf(raw, fr.mask);
@@ -39,17 +39,6 @@ int main ()//(int argc, char *argv[])
 	cout << "SNR:  " << int_prf.get_SNR() << endl;
 	cout << "ERR:  " << toa_error*1e3 << " mcsec" << endl;
 
-
-
-	ofstream out ("out/chanels.prf");
-	for (int i = 0; i < 570; i++)
-	{
-		for (int k = 0; k < 512; k++)
-			out << raw.mean_signal_per_chanel[k][i] << " ";
-
-		out << endl;
-	}
-	out.close();
-
+	raw.print_mean_channel("chanels.prf");
 	int_prf.print("out/int.prf");
 }

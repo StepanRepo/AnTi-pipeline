@@ -1,14 +1,20 @@
 #include"../lib/raw_profile.h"
 #include"../lib/session_info.h"
+#include"../lib/configuration.h"
+#include"../lib/massages.h"
 
 #include<string>
 #include<fstream>
-#include <iostream>
+#include<iostream>
 
 using namespace std;
 
+extern Configuration cfg;
+
 Raw_profile::Raw_profile(string file_name) : session_info(file_name)
 {
+	if (cfg.verbose)
+		cout << "Making raw profile" << endl;
 	int total_pulses = session_info.get_TOTAL_PULSES();
 	int obs_window = session_info.get_OBS_WINDOW();
 	int chanels = session_info.get_CHANELS();
@@ -30,10 +36,11 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name)
 }
 
 
-
 void Raw_profile::read_data(string file_name, byte32* data)
 {
-	cout << "Reading data . . ." << endl;
+	if (cfg.verbose)
+		cout << SUB << "Reading data...";
+
 
 	ifstream obs_file (file_name, ios::in | ios::binary);
 
@@ -45,19 +52,23 @@ void Raw_profile::read_data(string file_name, byte32* data)
 	obs_file.read((data[0].as_char), 4*OBS_SIZE);
 
 	obs_file.close();
+
+	if (cfg.verbose)
+		cout  << OK << endl;
 }
 
 void Raw_profile::decode_data(byte32* data, double* signal)
 {
-	cout << "Decoding data . . ." << endl;
+	if (cfg.verbose)
+		cout << SUB << "Decoding data...";
 
-	#pragma omp parallel default(private) shared(data, signal) 
+#pragma omp parallel default(private) shared(data, signal) 
 	{      
 		double exp, spectr_t;
 		double ratio = 0.2048/session_info.get_TAU();
 
 
-		#pragma omp for
+#pragma omp for
 		for (int i = 0; i < OBS_SIZE; i++)
 		{
 			spectr_t = double (data[i].as_int & 0xFFFFFF);
@@ -73,30 +84,57 @@ void Raw_profile::decode_data(byte32* data, double* signal)
 			signal[i] = spectr_t;
 		}
 	}
+
+	if (cfg.verbose)
+		cout << OK << endl;
 }
 
 void Raw_profile::split_data (double* signal)
 {
-	cout << "Splitting data . . ." << endl;
+	if (cfg.verbose)
+		cout << SUB << "Splitting data...";
 
 	int total_pulses = session_info.get_TOTAL_PULSES();
 	int obs_window = session_info.get_OBS_WINDOW();
 	int chanels = session_info.get_CHANELS();
 
-	for (int i = 0; i < 512; i++)
-		fill(mean_signal_per_chanel[i].begin(), mean_signal_per_chanel[i].end(), 0.0);
 
-	int chan_and_window = chanels*obs_window;
+#pragma omp parallel default(private) shared(total_pulses, obs_window, chanels, signal, mean_signal_per_chanel)  
+	{      
 
-	for (int imp = 0; imp < total_pulses; imp ++)
-	{
-		for (int k = 0; k < obs_window; k ++)
+#pragma omp for
+		for (int i = 0; i < 512; i++)
+			fill(mean_signal_per_chanel[i].begin(), mean_signal_per_chanel[i].end(), 0.0);
+
+		int chan_and_window = chanels*obs_window;
+
+#pragma omp for 
+		for (int imp = 0; imp < total_pulses; imp ++)
 		{
-			for (int i = 0; i < chanels; i++)
+			for (int k = 0; k < obs_window; k ++)
 			{
-				mean_signal_per_chanel[i][k] += signal[i + k*chanels + imp*chan_and_window];
+				for (int i = 0; i < chanels; i++)
+				{
+					mean_signal_per_chanel[i][k] += signal[i + k*chanels + imp*chan_and_window];
+				}
 			}
 		}
 	}
+
+	if (cfg.verbose)
+		cout << OK << endl;
 }
 
+void Raw_profile::print_mean_channel(string file_name)
+{
+
+	ofstream out (cfg.output_dir + file_name);
+	for (int i = 0; i < 570; i++)
+	{
+		for (int k = 0; k < 512; k++)
+			out << mean_signal_per_chanel[k][i] << " ";
+
+		out << endl;
+	}
+	out.close();
+}

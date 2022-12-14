@@ -1,16 +1,23 @@
-#include<vector>
-#include<iostream>
-#include<fstream>
-
 #include"../lib/int_profile.h"
 #include"../lib/session_info.h"
 #include"../lib/raw_profile.h"
 #include"../lib/custom_math.h"
+#include"../lib/configuration.h"
+#include"../lib/massages.h"
+
+#include<vector>
+#include<iostream>
+#include<fstream>
 
 using namespace std;
 
+extern Configuration cfg;
+
 Int_profile::Int_profile(Raw_profile& raw) : session_info()
 {
+	if (cfg.verbose)
+		cout << "Making integral profile" << endl;
+
 	session_info = raw.session_info;
 
 	int obs_window = session_info.get_OBS_WINDOW();
@@ -42,6 +49,9 @@ Int_profile::Int_profile(Raw_profile& raw) : session_info()
 
 Int_profile::Int_profile(Raw_profile& raw, vector<double> mask) : session_info()
 {
+	if (cfg.verbose)
+		cout << "Making integral profile" << endl;
+
 	session_info = raw.session_info;
 
 	int obs_window = session_info.get_OBS_WINDOW();
@@ -73,7 +83,8 @@ Int_profile::Int_profile(Raw_profile& raw, vector<double> mask) : session_info()
 
 void Int_profile::calculate_chanel_delay(vector<double>& chanel_delay)
 {
-	cout << "Calculating chanel delay . . ." << endl;
+	if (cfg.verbose)
+		cout << SUB << "Calculating chanel delay...";
 
 	double dm = session_info.get_DM();
 	double freq_max = session_info.get_FREQ_MAX();
@@ -89,11 +100,16 @@ void Int_profile::calculate_chanel_delay(vector<double>& chanel_delay)
 		freq_current = freq_min + double(i+1)*df/512.0;
 		chanel_delay[i] = (1.0/(freq_current*freq_current) - 1.0/(freq_max*freq_max))*dm*1e7/2.41;
 	}
+	
+
+	if (cfg.verbose)
+		cout << OK << endl;;
 }
 
 void Int_profile::move_chanel_profiles(Raw_profile* raw, std::vector<double>& chanel_delay)
 {
-	cout << "Moving chanel profiles . . ." << endl;
+	if (cfg.verbose)
+		cout << SUB << "Moving chanel profiles...";
 
 	double tau = session_info.get_TAU();
 	int chanels = session_info.get_CHANELS();
@@ -143,12 +159,16 @@ void Int_profile::move_chanel_profiles(Raw_profile* raw, std::vector<double>& ch
 			compensated_signal_per_chanel[i][j] = (1.0 - delta_dec)*temp_1[j] + delta_dec*temp_2[j];
 		}
 	}
+
+	if (cfg.verbose)
+		cout << OK << endl;;
 }
 
 
 void Int_profile::average_profiles()
 {
-	cout << "Averaging chanel profiles . . ." << endl;
+	if (cfg.verbose)
+		cout << SUB << "Averaging chanel profiles...";
 
 	int chanels = session_info.get_CHANELS();
 	int obs_window = session_info.get_OBS_WINDOW();
@@ -160,11 +180,15 @@ void Int_profile::average_profiles()
 			profile[j] += compensated_signal_per_chanel[i][j];
 		}
 	}
+
+	if (cfg.verbose)
+		cout << OK << endl;;
 }
 
 void Int_profile::average_profiles(vector<double> mask)
 {
-	cout << "Averaging chanel profiles whith mask . . ." << endl;
+	if (cfg.verbose)
+		cout << SUB << "Averaging chanel profiles whith mask...";
 
 	int chanels = session_info.get_CHANELS();
 	int obs_window = session_info.get_OBS_WINDOW();
@@ -176,11 +200,15 @@ void Int_profile::average_profiles(vector<double> mask)
 			profile[j] += mask[i]*compensated_signal_per_chanel[i][j];
 		}
 	}
+	
+	if (cfg.verbose)
+		cout << OK << endl;;
 }
 
 void Int_profile::normilize_profile()
 {
-	cout << "Normilizing integral profiles . . ." << endl;
+	if (cfg.verbose)
+		cout << SUB << "Normilizing integral profiles...";
 
 	int obs_window = session_info.get_OBS_WINDOW();
 
@@ -199,7 +227,8 @@ void Int_profile::normilize_profile()
 	for (int j = 0; j < obs_window; j++)
 		profile[j] = (profile[j] - min)/norm_factor;
 
-
+	if (cfg.verbose)
+		cout << OK << endl;;
 }
 
 
@@ -211,7 +240,8 @@ long double Int_profile::get_TOA(Etalon_profile& etalon_in)
 	}
 	else
 	{
-		cout << "Calculating TOA . . ." << endl;
+		if (cfg.verbose)
+			cout << SUB << "Calculating TOA...";
 
 		// Define etalon profile and scale it if it's nesesssery
 		Etalon_profile etalon (etalon_in.profile, etalon_in.get_TAU(), etalon_in.get_OBS_WINDOW());
@@ -220,6 +250,10 @@ long double Int_profile::get_TOA(Etalon_profile& etalon_in)
 		double reper_point = get_reper_point(etalon); 
 
 		long double mjd_start = session_info.get_START_UTC().get_MJD();
+
+
+		if (cfg.verbose)
+			cout << OK << endl;;
 
 		return mjd_start + (long double) (reper_point*session_info.get_TAU())*1e-3/86400.0l;
 	}
@@ -301,7 +335,8 @@ double Int_profile::get_ERROR()
 	}
 	else
 	{
-		cout << "Calculating TOA error . . ." << endl;
+		if (cfg.verbose)
+			cout << SUB << "Calculating TOA error...";
 
 		int obs_window = session_info.get_OBS_WINDOW();
 		int k1 = 0, k2 = 0;
@@ -338,6 +373,8 @@ double Int_profile::get_ERROR()
 		}
 
 		toa_error = 0.3*double(k2-k1)*session_info.get_TAU()/get_SNR();	
+
+		cout << OK << endl;
 
 		return toa_error;
 	}

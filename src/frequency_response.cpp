@@ -2,6 +2,8 @@
 #include"../lib/int_profile.h"
 #include"../lib/raw_profile.h"
 #include"../lib/custom_math.h"
+#include"../lib/configuration.h"
+#include"../lib/massages.h"
 
 #include<vector>
 #include<string>
@@ -10,8 +12,13 @@
 
 using namespace std;
 
+extern Configuration cfg;
+
 Frequency_response::Frequency_response(Raw_profile& raw) : session_info()
 {
+	if (cfg.verbose)
+		cout << "Making frequency response" << endl;;
+
 	session_info = raw.session_info;
 
 	fill_profile(raw.mean_signal_per_chanel);
@@ -21,6 +28,9 @@ Frequency_response::Frequency_response(Raw_profile& raw) : session_info()
 
 Frequency_response::Frequency_response(Int_profile& int_prf) : session_info()
 {
+	if (cfg.verbose)
+		cout << "Making frequency response" << endl;;
+
 	session_info = int_prf.session_info;
 
 	fill_profile(int_prf.compensated_signal_per_chanel);
@@ -30,7 +40,8 @@ Frequency_response::Frequency_response(Int_profile& int_prf) : session_info()
 
 void Frequency_response::fill_profile(vector<vector<double>> signal_per_chanel)
 {
-	cout << "Calculating profile of frequency response . . . " << endl;
+	if (cfg.verbose)
+		cout << SUB << "Calculating profile of frequency response...";
 
 	int channels = session_info.get_CHANELS(); 
 	int obs_window = session_info.get_OBS_WINDOW();
@@ -42,6 +53,9 @@ void Frequency_response::fill_profile(vector<vector<double>> signal_per_chanel)
 	for (int i = 0; i < channels; i++)
 		for(int j = 0; j < obs_window; j++)
 			profile[i] += signal_per_chanel[i][j]; 
+
+	if (cfg.verbose)
+		cout << OK << endl;
 }
 
 void Frequency_response::fill_mask()
@@ -56,6 +70,9 @@ void Frequency_response::fill_mask()
 
 void Frequency_response::derivative_filter(double p1)
 {
+	if (cfg.verbose)
+		cout << SUB << "Derivative filter...";
+
 	double m = median(profile);
 
 	for (int i = 0; i < session_info.get_CHANELS() - 1; i++)
@@ -65,10 +82,16 @@ void Frequency_response::derivative_filter(double p1)
 			mask[i] = 0.0;
 		}
 	}
+
+	if (cfg.verbose)
+		cout << OK << endl;
 }
 
 void Frequency_response::derivative_filter(double p1, int width)
 {
+	if (cfg.verbose)
+		cout << SUB << "Derivative filter...";
+
 	double m = median(profile);
 	int hw = width/2;
 
@@ -100,10 +123,16 @@ void Frequency_response::derivative_filter(double p1, int width)
 				mask[j] = 0.0;
 		}
 	}
+
+	if (cfg.verbose)
+		cout << OK << endl;
 }
 
 void Frequency_response::median_filter(double p2)
 {
+	if (cfg.verbose)
+		cout << SUB << "Median filter...";
+
 	double m;
 	double s;
 
@@ -117,6 +146,9 @@ void Frequency_response::median_filter(double p2)
 			mask[i] = 0.0;
 		}
 	}
+
+	if (cfg.verbose)
+		cout << OK << endl;
 }
 
 void Frequency_response::print(string file_name)
@@ -131,7 +163,6 @@ void Frequency_response::print(string file_name)
 
 	for (int i = 0; i < chanels; i++)
 		out << i << " " << freq_min + df*double(i) << " " << profile[i] << endl;
-
 }
 
 void Frequency_response::print_masked(string file_name)

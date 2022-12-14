@@ -22,6 +22,7 @@ class Raw_profile
         vector<vector<double>> mean_signal_per_chanel;
 
 	double get_RAW_SIGNAL(int i);
+	void print_mean_channel(string file_name);
 
     private:
         int OBS_SIZE;
