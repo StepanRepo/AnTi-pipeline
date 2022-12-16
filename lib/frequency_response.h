@@ -26,7 +26,7 @@ class Frequency_response
 		void median_filter(double p2);
 
 		void derivative_filter(double p1, int width);
-		//void median_filter(double p2, int width);
+		void median_filter(double p2, int width);
 
 		void print(string file_name);
 		void print_masked(string file_name);

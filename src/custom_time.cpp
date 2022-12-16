@@ -1,4 +1,5 @@
 #include"../lib/custom_time.h"
+#include"../lib/massages.h"
 
 #include<iostream>
 #include<string>
@@ -12,10 +13,10 @@ Custom_time::Custom_time (string time_s)
 {
 // string format: dd.mm.yy hh:mm:ss  sssssss
 
+	time_s.erase(std::remove_if(time_s.begin(), time_s.end(), ::isspace), time_s.end());
+
 	try
 	{
-		time_s.erase(std::remove_if(time_s.begin(), time_s.end(), ::isspace), time_s.end());
-
 		day = stoi(time_s.substr(0, 2));
 		month = stoi(time_s.substr(3, 2));
 		year = stoi(time_s.substr(6, 4));
@@ -25,9 +26,9 @@ Custom_time::Custom_time (string time_s)
 
 		second = stod(time_s.substr(16,2) + "." + time_s.substr(18));
 	}
-	catch (const std::invalid_argument &error)
+	catch (const invalid_argument &err)
 	{
-		cout << "fuck: " << time_s << endl;
+		throw invalid_argument (string(ERROR) + "Cann't read time string value");
 	}
 
 	mjd = 0.0l;

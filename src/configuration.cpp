@@ -1,4 +1,5 @@
 #include"../lib/configuration.h"
+#include"../lib/massages.h"
 
 #include<fstream>
 #include<iostream>
@@ -14,33 +15,39 @@ Configuration::Configuration(string file_name)
 	if (verbose)
 	{
 		if (!is_verbose)
-			cout << "Verbose wasn't set. Defaul value will be used instead" << endl;
+			cout << WARNING << "Verbose wasn't set. Defaul value will be used instead" << endl;
 		if (!is_rawdata_dir)
-			cout << "Input directory wasn't set. Defaul value will be used instead" << endl;
+			cout << WARNING << "Input directory wasn't set. Defaul value will be used instead" << endl;
 		if (!is_output_dir)
-			cout << "Output directoy wasn't set. Defaul value will be used instead" << endl;
+			cout << WARNING << "Output directoy wasn't set. Defaul value will be used instead" << endl;
 		if (!is_do_filtration)
-			cout << "Filtration configuration wasn't set. Defaul value will be used instead" << endl;
+			cout << WARNING << "Filtration configuration wasn't set. Defaul value will be used instead" << endl;
+		if (!is_deriv_threshold)
+			cout << WARNING << "Derivative filter thresold wasn't set. Defaul value will be used instead" << endl;
+		if (!is_deriv_width)
+			cout << WARNING << "Derivative filter width wasn't set. Defaul value will be used instead" << endl;
+		if (!is_median_threshold)
+			cout << WARNING << "Median filter thresold wasn't set. Defaul value will be used instead" << endl;
+		if (!median_width)
+			cout << WARNING << "Median filter width wasn't set. Defaul value will be used instead" << endl;
 		if (!is_get_fr)
-			cout << "Get FR wasn't set. Defaul value will be used instead" << endl;
+			cout << WARNING << "Get FR wasn't set. Defaul value will be used instead" << endl;
 		if (!is_num_files)
-			cout << "Number of input files wasn't set. Defaul value will be used instead" << endl;
+			cout << WARNING << "Number of input files wasn't set. Defaul value will be used instead" << endl;
 		if (!is_do_tpl)
-			cout << "Do TPL mode wasn't set. Defaul value will be used instead" << endl;
-		if (!is_srez_mode)
-			cout << "Srez mode wasn't set. Defaul value will be used instead" << endl;
+			cout << WARNING << "Do TPL mode wasn't set. Defaul value will be used instead" << endl;
 	}
 
 
 	if (!is_files)
 	{
-		cout << "List of files is empty. There is no default value. Exiting" << endl;
+		cout << ERROR << "List of files is empty. There is no default value. Exiting" << endl;
 		exit (0);
 	}
 
 	if (!is_tplfile and !do_tpl)
 	{
-		cout << "TPL file wasn't set. There is no default value. Exiting" << endl;
+		cout << ERROR << "TPL file wasn't set. There is no default value. Exiting" << endl;
 		exit (0);
 	}
 }
@@ -52,11 +59,14 @@ void Configuration::fill_config(string file_name)
 	is_output_dir = false;
 	is_tplfile = false;
 	is_do_filtration = false;
+	is_deriv_threshold = false;
+	is_median_threshold = false;
+	is_deriv_width = false;
+	is_median_width = false;
 	is_get_fr = false;
 	is_num_files = false;
 	is_files = false;
 	is_do_tpl = false;
-	is_srez_mode = false;
 
 
 	// setting default values
@@ -64,99 +74,134 @@ void Configuration::fill_config(string file_name)
 	rawdata_dir = ".";
 	output_dir = "out/";
 	do_filtration = true;
+	deriv_threshold = 2e-2;
+	deriv_width = 2;
+	median_threshold = 1.5;
+	median_width = 1;
 	get_fr = true;
-	num_files = 1;
+	num_files = 0;
 	files = vector<string> (0);
 	do_tpl = false;
-	srez_mode = false;
 
 
 	ifstream cfg (file_name);
 
-	if (cfg.is_open())
+	if (!cfg.is_open())
 	{
-		string line, name, value;
-		int line_num = 0;
+		cout << ERROR << "Error occured while reading configuration file: no such file " << file_name << endl;
+		exit(0);
+	}
 
-		while (getline(cfg, line))
+	string line, name, value;
+	int line_num = 0;
+
+	while (getline(cfg, line))
+	{
+		line_num ++;
+
+		remove_comments (line);
+		strip_white (line);
+
+		if (line == "") continue;
+
+		split_str (line, name, value);
+
+		if (name == "verbose")
 		{
-			line_num ++;
-
-			remove_comments (line);
-			strip_white (line);
-
-			if (line == "") continue;
-
-			split_str (line, name, value);
-
-			if (name == "verbose")
-			{
-				is_verbose = fill_bool(verbose, value, line_num);
-			}
-			else if (name == "rawdata_dir")
-			{
-				is_rawdata_dir = fill_directory(rawdata_dir, value, line_num);
-			}
-			else if (name == "output_dir")
-			{
-				is_output_dir = fill_directory(output_dir, value, line_num);
-			}
-			else if (name == "tplfile")
-			{
-				is_tplfile = fill_file(tplfile, value, line_num);
-			}
-			else if (name == "do_filtration")
-			{
-				is_do_filtration = fill_bool(do_filtration, value, line_num);
-			}
-			else if (name == "get_fr")
-			{
-				is_get_fr = fill_bool(get_fr, value, line_num);
-			}
-			else if (name == "do_tpl")
-			{
-				is_do_tpl = fill_bool(do_tpl, value, line_num);
-			}
-			else if (name == "srez_mode")
-			{
-				is_srez_mode = fill_bool(srez_mode, value, line_num);
-			}
-			else if (name == "num_files")
-			{
-				num_files = my_stoi(value, line_num);
-
-				if (num_files == -1)
-					num_files = 1;
-				else
-					is_num_files = true;
-			}
-			else if (name == "runs:")
-			{
-				files.reserve(num_files);
-
-				for (int i = 0; i < num_files; i++)
-				{
-// ДОБАВИТЬ EOF
-					getline(cfg, line);
-					files.push_back(line);
-				}
-
-				is_files = true;
-			}
-			else 
-			{
-				cout << "Unknown name of parameter: " << name << endl;
-			}
+			is_verbose = fill_bool(verbose, value, line_num);
 		}
+		else if (name == "rawdata_dir")
+		{
+			is_rawdata_dir = fill_directory(rawdata_dir, value, line_num);
+		}
+		else if (name == "output_dir")
+		{
+			is_output_dir = fill_directory(output_dir, value, line_num);
+		}
+		else if (name == "tplfile")
+		{
+			is_tplfile = fill_file(tplfile, value, line_num);
+		}
+		else if (name == "do_filtration")
+		{
+			is_do_filtration = fill_bool(do_filtration, value, line_num);
+		}
+		else if (name == "deriv_threshold")
+		{
+			deriv_threshold = my_stod(value, line_num);
 
+			if (deriv_threshold == -1.0)
+				deriv_threshold = 2e-2;
+			else
+				is_deriv_threshold = true;
+		}
+		else if (name == "deriv_width")
+		{
+			deriv_width = my_stoi(value, line_num);
+
+			if (deriv_width == -1)
+				deriv_threshold = 2;
+			else
+				is_deriv_width = true;
+		}
+		else if (name == "median_threshold")
+		{
+			median_threshold = my_stod(value, line_num);
+
+			if (median_threshold == -1.0)
+				deriv_threshold = 1.5;
+			else
+				is_median_threshold = true;
+		}
+		else if (name == "median_width")
+		{
+			median_width = my_stoi(value, line_num);
+
+			if (median_width == -1)
+				median_width = 1;
+			else
+				is_median_width = true;
+		}
+		else if (name == "get_fr")
+		{
+			is_get_fr = fill_bool(get_fr, value, line_num);
+		}
+		else if (name == "do_tpl")
+		{
+			is_do_tpl = fill_bool(do_tpl, value, line_num);
+		}
+		else if (name == "num_files")
+		{
+			num_files = my_stoi(value, line_num);
+
+			if (num_files == -1)
+				num_files = 0;
+			else
+				is_num_files = true;
+		}
+		else if (name == "runs:")
+		{
+			files.reserve(num_files);
+
+			for (int i = 0; i < num_files; i++)
+			{
+				// ДОБАВИТЬ EOF
+				getline(cfg, line);
+				files.push_back(line);
+			}
+
+			is_files = true;
+			break;
+		}
+		else 
+		{
+			cout << WARNING << "Unknown name of parameter at line " << line_num << " of configuration file" << endl;
+		}
 	}
-	else
-	{
-		cout << "Error occured while reading configuration file: no such file " << file_name << endl;
-		exit(1);
-	}
+
 
 	cfg.close();
+
 }
 
 void Configuration::remove_comments(string& line)
@@ -186,7 +231,7 @@ void Configuration::split_str (string& line, string& name, string& value)
 {
 	size_t pos = line.find('=');
 
-	if (pos == 18446744073709551615u) 
+	if (pos > 200) 
 	{
 		name = line;
 		return;
@@ -205,14 +250,31 @@ int Configuration::my_stoi(string str, int line_num)
 	catch(std::invalid_argument const&)
 	{
 		if (line_num != 0)
-			cout << "Unkwnown parameter value at line " << line_num << " of configuration file" << endl;
+			cout << WARNING << "Unkwnown parameter value at line " << line_num << " of configuration file" << endl;
 		else
-			cout << "Unkwnown parameter value in configuration file" << endl;
+			cout << WARNING << "Unkwnown parameter value in configuration file" << endl;
+
+		return -1.0;
+	}
+}
+
+
+double Configuration::my_stod(string str, int line_num)
+{
+	try
+	{
+		return stod(str);
+	}
+	catch(std::invalid_argument const&)
+	{
+		if (line_num != 0)
+			cout << WARNING << "Unkwnown parameter value at line " << line_num << " of configuration file" << endl;
+		else
+			cout << WARNING << "Unkwnown parameter value in configuration file" << endl;
 
 		return -1;
 	}
 }
-
 
 bool Configuration::fill_bool (bool& parameter, string value, int line_num)
 {
@@ -220,7 +282,7 @@ bool Configuration::fill_bool (bool& parameter, string value, int line_num)
 
 	if (v != 0 and v != 1)
 	{
-		cout << "error" << endl;
+		cout << WARNING << "Unkwnown parameter value at line " << line_num << " of configuration file" << endl;
 		return false;
 	}
 
@@ -238,12 +300,12 @@ bool Configuration::fill_directory (string& parameter, string value, int line_nu
 
 	if(stat(value.c_str(), &info) != 0 )
 	{
-		cout << "error" << endl;
+		cout << WARNING << "Unkwnown parameter value at line " << line_num << " of configuration file" << endl;
 		return false;
 	}
 	else if(!(info.st_mode & S_IFDIR))
 	{
-		cout << "error " << value << " is not a directory" << endl;
+		cout << WARNING << value << " is not a directory. Parameter wasn't set" << endl;
 		return false;
 	}
 	else
@@ -259,12 +321,12 @@ bool Configuration::fill_file (string& parameter, string value, int line_num)
 
 	if(stat(value.c_str(), &info) != 0 )
 	{
-		cout << "error" << endl;
+		cout << WARNING << "Unkwnown parameter value at line " << line_num << " of configuration file" << endl;
 		return false;
 	}
 	else if(info.st_mode & S_IFDIR)
 	{
-		cout << "error " << value << " is a directory" << endl;
+		cout << WARNING << value << " is a directory. Parameter wasn't set" << endl;
 		return false;
 	}
 	else

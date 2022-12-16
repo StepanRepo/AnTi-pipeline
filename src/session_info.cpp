@@ -1,11 +1,12 @@
-#include<string>
-#include<iostream>
-#include<fstream>
-
 #include"../lib/configuration.h"
 #include "../lib/session_info.h"
 #include "../lib/custom_time.h"
 #include"../lib/massages.h"
+
+#include<string>
+#include<iostream>
+#include<fstream>
+#include<exception>
 
 using namespace std;
 
@@ -39,10 +40,16 @@ Session_info::Session_info(string file_name) : start_date (0, 0, 0, 0, 0, 0l), s
 		cout << "Reading session information" << endl;
 
 
-	ifstream obs_file (file_name, ios::in | ios::binary);
-	char buffer[40];
+	ifstream obs_file;
+	obs_file.open(file_name, ios::in | ios::binary);
+
+
+	if (!obs_file)
+		throw invalid_argument (string(ERROR) + "Cann't open observational file to read header" + file_name);
 
 	string name, value;
+
+	char buffer[40];
 
 	// read number of lines in header
 	obs_file.read(buffer, 40);
@@ -54,6 +61,7 @@ Session_info::Session_info(string file_name) : start_date (0, 0, 0, 0, 0, 0l), s
 	{
 		obs_file.read(buffer, 40);
 		str_split(buffer, name, value);
+		
 
 		if (name == "name")
 			psr_name = value;
@@ -107,6 +115,7 @@ Session_info::Session_info(string file_name) : start_date (0, 0, 0, 0, 0, 0l), s
 	start_date = Custom_time(start_date_s);
 	start_utc = Custom_time(start_utc_s);
 }
+
 
 void Session_info::add_parameter(char* buffer_c)
 {
@@ -251,10 +260,11 @@ void str_split(string buffer, string& name, string& value)
 	{
 		value += buffer[i];
 
-		if (i > 40) break;
+		if (i > 40 or i == (int) buffer.length()) break;
 
 		i++;
 	}
+
 
 }
 
@@ -268,7 +278,7 @@ Custom_time Session_info::get_START_DATE()
 {
 	if (start_date_s == "") 
 	{
-		cout << "Date hasn't been read!" << endl;
+		throw invalid_argument (string(WARNING) + "Start date hasn't been read yet");
 	}
 
 	// Нужна полная проверка всех полей
@@ -277,7 +287,19 @@ Custom_time Session_info::get_START_DATE()
 	return start_date;
 }
 
-Custom_time Session_info::get_START_UTC() {return start_utc;}
+Custom_time Session_info::get_START_UTC() 
+{
+
+	if (start_utc_s == "") 
+	{
+		throw invalid_argument (string(WARNING) + "Start UTC hasn't been read yet");
+	}
+
+	// Нужна полная проверка всех полей
+	start_utc = Custom_time(start_utc_s);
+
+	return start_utc;
+}
 
 int Session_info::get_TOTAL_PULSES() {return total_pulses;}
 

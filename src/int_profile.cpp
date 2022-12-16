@@ -81,6 +81,15 @@ Int_profile::Int_profile(Raw_profile& raw, vector<double> mask) : session_info()
 	freq_comp = session_info.get_FREQ_MAX();
 }
 
+
+Int_profile::Int_profile (string file_name) : session_info(file_name)
+{
+	if (cfg.verbose)
+		cout << "Reading integral profile" << endl;
+
+
+}
+
 void Int_profile::calculate_chanel_delay(vector<double>& chanel_delay)
 {
 	if (cfg.verbose)
@@ -294,8 +303,6 @@ double Int_profile::get_reper_point (Etalon_profile& etalon)
 			max_pos = i;
 		}
 	}
-
-	//for (int )
 
 	// Clarify the position of maximum of
 	// the continous ccf

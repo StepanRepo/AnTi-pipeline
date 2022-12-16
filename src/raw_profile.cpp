@@ -44,6 +44,9 @@ void Raw_profile::read_data(string file_name, byte32* data)
 
 	ifstream obs_file (file_name, ios::in | ios::binary);
 
+	if (!obs_file)
+		throw invalid_argument (string(ERROR) + "Cann't open observational file to read data" + file_name);
+
 	// skip header of file
 	for (int i = 0; i < session_info.get_NUM_PARAMS(); i++)
 		obs_file.ignore(40, '\n');

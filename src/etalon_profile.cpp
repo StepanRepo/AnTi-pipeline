@@ -1,4 +1,7 @@
 #include"../lib/etalon_profile.h"
+#include"../lib/int_profile.h"
+#include"../lib/massages.h"
+#include"../lib/custom_math.h"
 
 #include<iostream>
 #include<fstream>
@@ -25,6 +28,10 @@ Etalon_profile::Etalon_profile(vector<double> profile_ext, double tau_ext, int o
 void Etalon_profile::read_header(string file_name)
 {
 	ifstream tpl_file (file_name, ios::in);
+
+	if (!tpl_file)
+		throw invalid_argument (string(ERROR) + "Cann't open file with template profile" + file_name);
+
 	string header_buffer;
 
 	getline(tpl_file, header_buffer);	
@@ -39,6 +46,9 @@ void Etalon_profile::read_header(string file_name)
 void Etalon_profile::fill_profile(string file_name)
 {
 	ifstream tpl_file (file_name, ios::in);
+
+	if (!tpl_file)
+		throw invalid_argument (string(ERROR) + "Cann't open file with template profile" + file_name);
 	
 	for (int i = 0; i < 2; i ++)
 		tpl_file.ignore(100, '\n');
@@ -98,6 +108,83 @@ Etalon_profile Etalon_profile::scale_profile(double tau_new)
 	return Etalon_profile(profile_new, tau_new, obs_window);
 
 }
+
+Etalon_profile make_tpl (vector<vector<double>>& profiles, double tau)
+{
+	size_t n = profiles.size();
+
+	vector<double> profile; 
+	vector<double> mean_profile;
+
+	mean_profile = profiles[0];
+	size_t obs_window = mean_profile.size();
+
+
+	vector<double> ccf (2*obs_window);
+
+	double reper_dec;
+	vector<double> near_max(5), coefficients(5), derivative (4);
+
+	double max; 
+	size_t max_pos;
+
+	for (size_t i = 1; i < n; i++)
+	{
+		profile = profiles[i];
+
+		// check the size of current vector
+		if (profile.size() > obs_window)
+			profile.erase(profile.begin() + obs_window+1);
+		else if (profile.size() < obs_window)
+		{
+			profile.reserve(obs_window - profile.size());
+
+			for (size_t i = profile.size(); i < obs_window; i ++)
+			       profile.push_back(0.0);	
+		}
+
+		// correlation of profiles
+		for (size_t j = 0; j < 2*obs_window; j++)
+			ccf[j] = discrete_ccf(mean_profile, profile, j - obs_window);
+		
+		max = 0.0;
+		max_pos = 0;
+
+		for (size_t j = 0; j < 2*obs_window; j++)
+		{
+			if (ccf[j] > max)
+			{
+				max = ccf[j];
+				max_pos = j;
+			}
+		}
+
+		for (size_t j = -2; j < 3; j++)
+			near_max[i+2] = ccf[max_pos + i]/max;
+
+		coefficients = interpolation4(near_max);
+
+		derivative[0] = 4.0*coefficients[0];
+		derivative[1] = 3.0*coefficients[1];
+		derivative[2] = 2.0*coefficients[2];
+		derivative[3] = coefficients[3];
+
+		reper_dec =  find_root(derivative, -1.0, 1.0);
+
+		move_continous(profile, (double) max_pos + reper_dec);
+
+		for (size_t j = 0; j < obs_window; j++)
+			mean_profile[j] += profile[j];
+	}	
+
+
+	Etalon_profile result (mean_profile, tau, (int) obs_window);
+	result.normilize();
+
+	return result;
+}
+
+
 
 void Etalon_profile::print(string file_name)
 {

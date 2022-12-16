@@ -151,6 +151,48 @@ void Frequency_response::median_filter(double p2)
 		cout << OK << endl;
 }
 
+void Frequency_response::median_filter(double p2, int width)
+{
+	median_filter(p2);
+
+	int i = 0;
+
+	while (i < width)
+	{
+		if (mask[i] == 0.0)
+		{
+			for (int j = 0; j < i+width+1; j++)
+				mask[j] = 0.0;
+			i += width;
+		}
+
+		i++;
+	}
+
+	while (i < session_info.get_CHANELS() - width)
+	{
+		if (mask[i] == 0.0)
+		{
+			for (int j = i-width; j < i+width; j++)
+				mask[j] = 0.0;
+			i += width;
+		}
+
+		i++;
+	}
+
+	while (i < session_info.get_CHANELS())
+	{
+		if (mask[i] == 0.0)
+		{
+			for (int j = i-width; j < session_info.get_CHANELS(); j++)
+				mask[j] = 0.0;
+			i += width;
+		}
+
+		i++;
+	}
+}
 void Frequency_response::print(string file_name)
 {
 	int chanels = session_info.get_CHANELS();

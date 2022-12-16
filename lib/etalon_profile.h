@@ -13,6 +13,8 @@ class Etalon_profile
 
 		Etalon_profile(vector<double> profile, double tau, int obs_window);
 
+		Etalon_profile make_tpl (vector<vector<double>> &, double tau);
+
 		vector<double> profile;
 
 		void normilize();
