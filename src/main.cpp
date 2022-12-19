@@ -8,13 +8,34 @@
 #include"../lib/etalon_profile.h"
 #include"../lib/frequency_response.h"
 #include"../lib/configuration.h"
+#include"../lib/massages.h"
+
 
 using namespace std;
 
-Configuration cfg;
+Configuration* cfg;
 
-int main ()//(int argc, char *argv[])
+int main (int argc, char *argv[])
 {
+	// section for reading configuration file name from CL
+	int i;
+
+	for (i = 1; i < argc; i++)
+	{
+		if (argv[i][0] == '-')
+			continue;
+		else
+		{
+			cfg = new Configuration(argv[i]);
+			break;
+		}
+	}
+
+	if (i == argc)
+		cfg = new Configuration();
+
+	cfg->command_line(argc, argv);
+
 
 	Raw_profile *raw;
 	Frequency_response *fr;
@@ -24,69 +45,204 @@ int main ()//(int argc, char *argv[])
 	long double toa;
 	double toa_error;
 
-	if (cfg.do_tpl)
+	string ext;
+
+	vector<string> error_list, error_names;
+
+	if (cfg->do_tpl)
 	{
-		cout << "Do TPL mode is currently not aviable. Please wait for next release of the programm" << endl;
+		cout << "Do TPL mode" << endl;
+
+		vector <Int_profile> profiles;
+
+		for (size_t i = 0; i < cfg->files.size(); i++)
+		{
+			string file_name = cfg->files[i];
+			ext = file_name.substr(file_name.find('.') + 1);
+
+			if (cfg->verbose)
+				cout << endl << BOLD << "Processing of file: " << file_name << RESET << endl;
+
+			if (ext == "prf" || ext == "srez")
+			{
+				try
+				{
+					int_prf = new Int_profile (cfg->rawdata_dir + cfg->files[i]);
+					int_prf->read_freq_comp(cfg->rawdata_dir + cfg->files[i]);
+				}
+				catch (const invalid_argument &err)
+				{
+					if (cfg->verbose)
+						cout << err.what() << endl;
+
+					error_list.push_back(err.what());
+					error_names.push_back(file_name);
+
+					continue;
+				}
+			}
+			else if (ext == file_name)
+			{
+				try
+				{
+					raw = new Raw_profile (cfg->rawdata_dir + file_name);
+				}
+				catch (const invalid_argument &err)
+				{
+					if (cfg->verbose)
+						cout << err.what() << endl;
+
+					error_list.push_back(err.what());
+					error_names.push_back(file_name);
+
+					continue;
+				}
+
+				fr = new Frequency_response (*raw);
+
+				if (cfg->do_filtration)
+				{
+					if (cfg->is_deriv_width)
+						fr->derivative_filter(cfg->deriv_threshold, cfg->deriv_width);
+					else 
+						fr->derivative_filter(cfg->deriv_threshold);
+
+					if (cfg->is_median_width)
+						fr->median_filter(cfg->median_threshold, cfg->median_width);
+					else
+						fr->median_filter(cfg->median_threshold);
+				}
+
+				int_prf = new Int_profile (*raw, fr->mask);
+				int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
+			}
+			else
+			{
+				cout << WARNING << "Unknown file format: " << file_name << endl;
+				continue;
+			}
+
+				profiles.push_back(*int_prf);
+		}
+
+		etalon_prf = new Etalon_profile(profiles);
+		etalon_prf->print(cfg->output_dir + profiles[0].session_info.get_PSR_NAME() + ".tpl");
+
+		cout << endl << "Template profile was made from " << profiles.size() << " integral profiles" << endl;
+		cout << "SNR: " << etalon_prf->get_SNR() << endl;
 	}
 	else
 	{
+		cout << "TOA calculating mode" << endl;
 
-		for (size_t i = 0; i < cfg.files.size(); i++)
+		try
 		{
-			string file_name = cfg.files[i];
-
-			try
-			{
-				raw = new Raw_profile (file_name);
-			}
-			catch (const invalid_argument &err)
-			{
+			etalon_prf = new Etalon_profile (cfg->tplfile);
+		}
+		catch (const invalid_argument &err)
+		{
+			if (cfg->verbose)
 				cout << err.what() << endl;
-				break;
-			}
 
-			fr = new Frequency_response (*raw);
+			error_list.push_back(err.what());
+			error_names.push_back(cfg->tplfile);
 
-			if (cfg.do_filtration)
+			exit(0);
+		}
+
+		for (size_t i = 0; i < cfg->files.size(); i++)
+		{
+			string file_name = cfg->files[i];
+			ext = file_name.substr(file_name.find('.') + 1);
+
+			if (cfg->verbose)
+				cout << endl << BOLD << "Processing of file: " << file_name << RESET << endl;
+
+			if (ext == "prf" || ext == "srez")
 			{
-				if (cfg.is_deriv_width)
-					fr->derivative_filter(cfg.deriv_threshold, cfg.deriv_width);
-				else 
-					fr->derivative_filter(cfg.deriv_threshold);
+				try
+				{
+					int_prf = new Int_profile (cfg->rawdata_dir + cfg->files[i]);
+					int_prf->read_freq_comp(cfg->rawdata_dir + cfg->files[i]);
+				}
+				catch (const invalid_argument &err)
+				{
+					if (cfg->verbose)
+						cout << err.what() << endl;
 
-				if (cfg.is_median_width)
-					fr->median_filter(cfg.median_threshold, cfg.median_width);
-				else
-					fr->median_filter(cfg.median_threshold);
+					error_list.push_back(err.what());
+					error_names.push_back(file_name);
+
+					continue;
+				}
 			}
-
-			try
+			else if (ext == file_name)
 			{
-				etalon_prf = new Etalon_profile (cfg.tplfile);
-			}
-			catch (const invalid_argument &err)
-			{
-				cout << err.what() << endl;
-				break;
-			}
+				try
+				{
+					raw = new Raw_profile (cfg->rawdata_dir + file_name);
+				}
+				catch (const invalid_argument &err)
+				{
+					if (cfg->verbose)
+						cout << err.what() << endl;
 
-			int_prf = new Int_profile (*raw, fr->mask);
+					error_list.push_back(err.what());
+					error_names.push_back(file_name);
+
+					continue;
+				}
+
+				fr = new Frequency_response (*raw);
+
+				if (cfg->do_filtration)
+				{
+					if (cfg->is_deriv_width)
+						fr->derivative_filter(cfg->deriv_threshold, cfg->deriv_width);
+					else 
+						fr->derivative_filter(cfg->deriv_threshold);
+
+					if (cfg->is_median_width)
+						fr->median_filter(cfg->median_threshold, cfg->median_width);
+					else
+						fr->median_filter(cfg->median_threshold);
+				}
+
+				int_prf = new Int_profile (*raw, fr->mask);
+				int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
+			}
+			else
+			{
+				cout << WARNING << "Unknown file format: " << file_name << endl;
+				continue;
+			}
 
 			toa = int_prf->get_TOA(*etalon_prf);
 			toa_error = int_prf->get_ERROR();
 
-			cout.precision(24);
-			cout << endl << "TOA:  " << toa <<  " MJD" << endl;
-			cout << "SNR:  " << int_prf->get_SNR() << endl;
-			cout << "ERR:  " << toa_error*1e3 << " mcsec" << endl;
+			int_prf->ITOA();
 
+			if (cfg->verbose)
+			{
+				cout.precision(24);
+				cout << endl << "TOA:  " << toa <<  " MJD" << endl;
+				cout << "SNR:  " << int_prf->get_SNR() << endl;
+				cout << "ERR:  " << toa_error*1e3 << " mcsec" << endl;
+			}
 
+			int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
+		}
 
-			fr->print(cfg.output_dir + "190122_0329+54_00.fr");
-			fr->print_masked(cfg.output_dir + "masked_190122_0329+54_00.fr");
+		cout << endl << "TOA was calculated for " << cfg->files.size() << " integral profiles" << endl;
+	}
 
-			(*raw).print_mean_channel("chanels.prf");
-			int_prf->print("out/int.prf");
+	if (error_list.size() > 0)
+	{
+		cout << endl << "Duplication of errors:" << endl;
+
+		for (size_t i = 0; i < error_list.size(); i++)
+		{ 
+			cout << i+1 << ". In file " << error_names[i] << ": " << error_list[i] << endl;
 		}
 	}
 }

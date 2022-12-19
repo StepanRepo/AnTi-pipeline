@@ -12,11 +12,11 @@
 
 using namespace std;
 
-extern Configuration cfg;
+extern Configuration* cfg;
 
 Frequency_response::Frequency_response(Raw_profile& raw) : session_info()
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << "Making frequency response" << endl;;
 
 	session_info = raw.session_info;
@@ -28,7 +28,7 @@ Frequency_response::Frequency_response(Raw_profile& raw) : session_info()
 
 Frequency_response::Frequency_response(Int_profile& int_prf) : session_info()
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << "Making frequency response" << endl;;
 
 	session_info = int_prf.session_info;
@@ -40,7 +40,7 @@ Frequency_response::Frequency_response(Int_profile& int_prf) : session_info()
 
 void Frequency_response::fill_profile(vector<vector<double>> signal_per_chanel)
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << SUB << "Calculating profile of frequency response...";
 
 	int channels = session_info.get_CHANELS(); 
@@ -54,7 +54,7 @@ void Frequency_response::fill_profile(vector<vector<double>> signal_per_chanel)
 		for(int j = 0; j < obs_window; j++)
 			profile[i] += signal_per_chanel[i][j]; 
 
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << OK << endl;
 }
 
@@ -70,7 +70,7 @@ void Frequency_response::fill_mask()
 
 void Frequency_response::derivative_filter(double p1)
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << SUB << "Derivative filter...";
 
 	double m = median(profile);
@@ -83,13 +83,13 @@ void Frequency_response::derivative_filter(double p1)
 		}
 	}
 
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << OK << endl;
 }
 
 void Frequency_response::derivative_filter(double p1, int width)
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << SUB << "Derivative filter...";
 
 	double m = median(profile);
@@ -124,13 +124,13 @@ void Frequency_response::derivative_filter(double p1, int width)
 		}
 	}
 
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << OK << endl;
 }
 
 void Frequency_response::median_filter(double p2)
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << SUB << "Median filter...";
 
 	double m;
@@ -147,7 +147,7 @@ void Frequency_response::median_filter(double p2)
 		}
 	}
 
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << OK << endl;
 }
 

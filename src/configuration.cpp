@@ -120,7 +120,7 @@ void Configuration::fill_config(string file_name)
 		}
 		else if (name == "tplfile")
 		{
-			is_tplfile = fill_file(tplfile, value, line_num);
+			is_tplfile = fill_file(tplfile, rawdata_dir + value, line_num);
 		}
 		else if (name == "do_filtration")
 		{
@@ -183,11 +183,14 @@ void Configuration::fill_config(string file_name)
 		{
 			files.reserve(num_files);
 
-			for (int i = 0; i < num_files; i++)
+			int i = 0;
+			while (getline(cfg, line))
 			{
-				// ДОБАВИТЬ EOF
-				getline(cfg, line);
 				files.push_back(line);
+
+				i++;
+				if (i == num_files)
+					break;
 			}
 
 			is_files = true;
@@ -199,9 +202,101 @@ void Configuration::fill_config(string file_name)
 		}
 	}
 
-
 	cfg.close();
+}
 
+void Configuration::command_line(int argc, char** argv)
+{
+	string buffer, name, value;
+
+	for (int i = 1; i < argc; i++)
+	{
+		buffer = argv[i];
+
+		if (buffer[0] == '-')
+		{
+			if (buffer[1] == '-')
+				buffer = buffer.substr(2);
+			else
+				buffer = buffer.substr(1);
+		}
+
+		split_str (buffer, name, value);
+
+
+		if (name == "verbose" || name == "v")
+		{
+			verbose = true;
+			is_verbose = true;
+		}
+		else if (name == "rawdata_dir")
+		{
+			is_rawdata_dir = fill_directory(rawdata_dir, value, i);
+		}
+		else if (name == "output_dir")
+		{
+			is_output_dir = fill_directory(output_dir, value, i);
+		}
+		else if (name == "tplfile")
+		{
+			is_tplfile = fill_file(tplfile, rawdata_dir + value, i);
+		}
+		else if (name == "do_filtration")
+		{
+			do_filtration = true;
+			is_do_filtration = true;
+		}
+		else if (name == "deriv_threshold")
+		{
+			deriv_threshold = my_stod(value, i);
+
+			if (deriv_threshold == -1.0)
+				deriv_threshold = 2e-2;
+			else
+				is_deriv_threshold = true;
+		}
+		else if (name == "deriv_width")
+		{
+			deriv_width = my_stoi(value, i);
+
+			if (deriv_width == -1)
+				deriv_threshold = 2;
+			else
+				is_deriv_width = true;
+		}
+		else if (name == "median_threshold")
+		{
+			median_threshold = my_stod(value, i);
+
+			if (median_threshold == -1.0)
+				deriv_threshold = 1.5;
+			else
+				is_median_threshold = true;
+		}
+		else if (name == "median_width")
+		{
+			median_width = my_stoi(value, i);
+
+			if (median_width == -1)
+				median_width = 1;
+			else
+				is_median_width = true;
+		}
+		else if (name == "get_fr")
+		{
+			get_fr = true;
+			is_get_fr = true;
+		}
+		else if (name == "do_tpl")
+		{
+			do_tpl = true;
+			is_do_tpl = true; 
+		}
+		else 
+		{
+			cout << WARNING << "Unknown argument: " << buffer << endl;
+		}
+	}
 }
 
 void Configuration::remove_comments(string& line)

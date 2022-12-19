@@ -11,20 +11,24 @@ class Int_profile
 {
     public:
 
-        Session_info session_info;
-        std::vector<double> profile;
-	std::vector<std::vector<double>> compensated_signal_per_chanel;
-
         Int_profile(Raw_profile& raw);
         Int_profile(Raw_profile& raw, std::vector<double> mask);
 	Int_profile(std::string file_name);
 
+        Session_info session_info;
+
+        std::vector<double> profile;
+	std::vector<std::vector<double>> compensated_signal_per_chanel;
+
+
 	long double get_TOA(Etalon_profile&);
 	double get_ERROR();
+	void ITOA();
 
 	double get_SNR();
 
 	double get_FREQ_COMP();
+	void read_freq_comp (std::string file_name); 
 
 	void print(string file_name);
 
@@ -40,6 +44,7 @@ class Int_profile
 
 	long double toa;
 	double toa_error;
+
 	double get_reper_point(Etalon_profile&);
 
 	double snr;

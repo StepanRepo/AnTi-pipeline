@@ -9,11 +9,11 @@
 
 using namespace std;
 
-extern Configuration cfg;
+extern Configuration* cfg;
 
-Raw_profile::Raw_profile(string file_name) : session_info(file_name)
+Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << "Making raw profile" << endl;
 	int total_pulses = session_info.get_TOTAL_PULSES();
 	int obs_window = session_info.get_OBS_WINDOW();
@@ -38,7 +38,7 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name)
 
 void Raw_profile::read_data(string file_name, byte32* data)
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << SUB << "Reading data...";
 
 
@@ -56,13 +56,13 @@ void Raw_profile::read_data(string file_name, byte32* data)
 
 	obs_file.close();
 
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout  << OK << endl;
 }
 
 void Raw_profile::decode_data(byte32* data, double* signal)
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << SUB << "Decoding data...";
 
 #pragma omp parallel default(private) shared(data, signal) 
@@ -88,13 +88,13 @@ void Raw_profile::decode_data(byte32* data, double* signal)
 		}
 	}
 
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << OK << endl;
 }
 
 void Raw_profile::split_data (double* signal)
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << SUB << "Splitting data...";
 
 	int total_pulses = session_info.get_TOTAL_PULSES();
@@ -124,14 +124,16 @@ void Raw_profile::split_data (double* signal)
 		}
 	}
 
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << OK << endl;
 }
 
 void Raw_profile::print_mean_channel(string file_name)
 {
+	ofstream out (file_name);
 
-	ofstream out (cfg.output_dir + file_name);
+	if (!out)
+		cout << WARNING << "Cann't print channel profiles: " << file_name << endl;
 	for (int i = 0; i < 570; i++)
 	{
 		for (int k = 0; k < 512; k++)

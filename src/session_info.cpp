@@ -10,7 +10,7 @@
 
 using namespace std;
 
-extern Configuration cfg;
+extern Configuration* cfg;
 
 void str_split(string buffer, string& name, string& value);
 
@@ -34,14 +34,17 @@ Session_info::Session_info() : start_date (0, 0, 0, 0, 0, 0l), start_utc (0, 0, 
 	chanels = 512;
 }
 
-Session_info::Session_info(string file_name) : start_date (0, 0, 0, 0, 0, 0l), start_utc (0, 0, 0, 0, 0, 0l)
+Session_info::Session_info(string file_name, bool binary) : start_date (0, 0, 0, 0, 0, 0l), start_utc (0, 0, 0, 0, 0, 0l)
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << "Reading session information" << endl;
 
 
 	ifstream obs_file;
-	obs_file.open(file_name, ios::in | ios::binary);
+	if (binary)
+		obs_file.open(file_name, ios::in | ios::binary);
+	else
+		obs_file.open(file_name, ios::in);
 
 
 	if (!obs_file)
@@ -49,20 +52,36 @@ Session_info::Session_info(string file_name) : start_date (0, 0, 0, 0, 0, 0l), s
 
 	string name, value;
 
-	char buffer[40];
+	char buffer_c[40];
+	string buffer_s;
 
 	// read number of lines in header
-	obs_file.read(buffer, 40);
-	str_split(buffer, name, value);
+	if (binary)
+	{
+		obs_file.read(buffer_c, 40);
+		str_split(buffer_c, name, value);
+	}
+	else
+	{
+		getline (obs_file, buffer_s);
+		str_split(buffer_s, name, value);
+	}
 
 	number_params = stoi(value);
 
 	for (int i = 1; i < number_params; i++)
 	{
-		obs_file.read(buffer, 40);
-		str_split(buffer, name, value);
+		if (binary)
+		{
+			obs_file.read(buffer_c, 40);
+			str_split(buffer_c, name, value);
+		}
+		else
+		{
+			getline (obs_file, buffer_s);
+			str_split(buffer_s, name, value);
+		}
 		
-
 		if (name == "name")
 			psr_name = value;
 
@@ -70,15 +89,15 @@ Session_info::Session_info(string file_name) : start_date (0, 0, 0, 0, 0, 0l), s
 			start_date_s = value;
 
 		else if (name == "time")
-			start_date_s += " " + value;
-
+			start_date_s = start_date_s.substr(0, start_date_s.find(' ')) + " " + value;
+		
 		else if (name == "period")
 			psr_period = stold(value);
 
 		if (name == "numpuls")
 			total_pulses = stoi(value);
 
-		else if (name == "tay")
+		else if (name == "tay" || name == "tau")
 			tau = stod(value);
 
 		else if (name == "numpointwin")
@@ -93,15 +112,17 @@ Session_info::Session_info(string file_name) : start_date (0, 0, 0, 0, 0, 0l), s
 		else if(name == "dm")
 			dm = stod(value);
 
-		else if(name == "freq0")
+		else if(name == "freq0" || name == "F0")
 			freq_min = stod(value);
 
-		else if(name == "freq511")
+		else if(name == "freq511" || name == "F511")
 			freq_max = stod(value);
 
 		else if (name == "dt_utc")
 		{
-			value = value.substr(0, 6) + "20" + value.substr(6);
+			if (value.substr(6, 2) != "20")
+				value = value.substr(0, 6) + "20" + value.substr(6);
+
 			start_utc_s = value;
 		}
 
@@ -112,64 +133,13 @@ Session_info::Session_info(string file_name) : start_date (0, 0, 0, 0, 0, 0l), s
 
 	chanels = 512;
 
+	if (start_utc_s == "")
+		throw invalid_argument(string(ERROR) + "There is no utc time in observation file " + file_name);
+
 	start_date = Custom_time(start_date_s);
 	start_utc = Custom_time(start_utc_s);
 }
 
-
-void Session_info::add_parameter(char* buffer_c)
-{
-	string buffer = buffer_c;
-	string name, value;
-
-	str_split(buffer, name, value);
-
-	if (name == "numpar")
-		number_params = stoi(value);
-
-	else if (name == "name")
-		psr_name = value;
-
-	else if (name == "date")
-		start_date_s = value;
-
-	else if (name == "time")
-		start_date_s += " " + value;
-
-	else if (name == "period")
-		psr_period = stold(value);
-
-	if (name == "numpuls")
-		total_pulses = stoi(value);
-
-	else if (name == "tay" or name == "tau")
-		tau = stod(value);
-
-	else if (name == "numpointwin")
-		obs_window = stoi(value);
-
-	else if (name == "sumchan")
-	{
-		if (value == "yes") sumchan = true;
-		if (value == "no") sumchan = false;
-	}
-
-	else if(name == "dm")
-		dm = stod(value);
-
-	else if(name == "freq0")
-		freq_min = stod(value);
-
-	else if(name == "freq511")
-		freq_max = stod(value);
-
-	else if (name == "dt_utc")
-	{
-		value = value.substr(0, 6) + "20" + value.substr(6);
-		start_utc_s = value;
-	}
-
-}
 
 void Session_info::print(string file_name, double freq_comp)
 {
@@ -207,9 +177,8 @@ void Session_info::print(string file_name, double freq_comp)
 		out << "Fcomp       " << freq_comp << endl;
 		out << "F511        " << freq_max << endl;
 	}
-
 }
-
+/*
 void Session_info::operator=(Session_info& right)
 {
 	number_params = right.number_params;
@@ -231,6 +200,7 @@ void Session_info::operator=(Session_info& right)
 	freq_min = right.freq_min;
 	freq_max = right.freq_max;
 }
+*/
 
 void str_split(string buffer, string& name, string& value)
 {
@@ -238,6 +208,10 @@ void str_split(string buffer, string& name, string& value)
 
 	name = "";
 	value = "";
+
+	size_t comma = buffer.find(',');
+	if (comma < 200)
+		buffer[comma] = '.';
 
 	while (buffer[i] != ' ')
 	{
@@ -249,10 +223,21 @@ void str_split(string buffer, string& name, string& value)
 	while (buffer[i] == ' ')
 		i++;
 
-	// костыль из-за особенности записи utc в заголовочном файле
-	if (name == "dt_utc" || name == "time") 
+	// костыль из-за формата записи времени в заголовочном файле
+	if (name == "dt_utc" || name == "time" || name == "date") 
 	{
 		value = buffer.substr(i);
+
+		// заменить конец строки на пробел
+		// для избежания проблем с кодировкой
+		size_t null = value.find('\r');
+		if (null < 200)
+			value[null] = ' ';
+
+		null = value.find('\0');
+		if (null < 200)
+			value[null] = ' ';
+
 		return;
 	}
 
@@ -260,12 +245,20 @@ void str_split(string buffer, string& name, string& value)
 	{
 		value += buffer[i];
 
-		if (i > 40 or i == (int) buffer.length()) break;
-
+		if (i > 40 || i == (int) buffer.length())
+			break;
 		i++;
 	}
 
+	// заменить конец строки на пробел
+	// для избежания проблем с кодировкой
+	size_t null = value.find('\r');
+	if (null < 200)
+		value[null] = ' ';
 
+	null = value.find('\0');
+	if (null < 200)
+		value[null] = ' ';
 }
 
 int Session_info::get_NUM_PARAMS() {return number_params;}

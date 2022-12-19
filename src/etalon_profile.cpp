@@ -2,6 +2,7 @@
 #include"../lib/int_profile.h"
 #include"../lib/massages.h"
 #include"../lib/custom_math.h"
+#include"../lib/configuration.h"
 
 #include<iostream>
 #include<fstream>
@@ -10,8 +11,13 @@
 
 using namespace std;
 
+extern Configuration* cfg;
+
 Etalon_profile::Etalon_profile(string file_name)
 {
+	if (cfg->verbose)
+		cout << "Reading template profile" << endl;
+
 	read_header(file_name);
 	fill_profile(file_name);
 }
@@ -30,7 +36,7 @@ void Etalon_profile::read_header(string file_name)
 	ifstream tpl_file (file_name, ios::in);
 
 	if (!tpl_file)
-		throw invalid_argument (string(ERROR) + "Cann't open file with template profile" + file_name);
+		throw invalid_argument (string(ERROR) + "Cann't open file with template profile " + file_name);
 
 	string header_buffer;
 
@@ -48,7 +54,7 @@ void Etalon_profile::fill_profile(string file_name)
 	ifstream tpl_file (file_name, ios::in);
 
 	if (!tpl_file)
-		throw invalid_argument (string(ERROR) + "Cann't open file with template profile" + file_name);
+		throw invalid_argument (string(ERROR) + "Cann't open file with template profile " + file_name);
 	
 	for (int i = 0; i < 2; i ++)
 		tpl_file.ignore(100, '\n');
@@ -66,7 +72,8 @@ void Etalon_profile::fill_profile(string file_name)
 
 void Etalon_profile::normilize()
 {
-	cout << "Normilizing etalon profile . . ." << endl;
+	if (cfg->verbose)
+		cout << SUB << "Normilizing of template profile . . .";
 
 	double min = profile[0];
 	double max = 0;
@@ -82,14 +89,25 @@ void Etalon_profile::normilize()
 
 	for (int j = 0; j < obs_window; j++)
 		profile[j] = (profile[j] - min)/norm_factor;
+
+	if (cfg->verbose)
+		cout << OK << endl;
 }
 
 
 
 Etalon_profile Etalon_profile::scale_profile(double tau_new)
 {
+	if (cfg->verbose)
+		cout << SUB << "Scaling of template profile...";
+
 	if (tau == tau_new) 
+	{
+		if (cfg->verbose)
+			cout << OK << endl;
+
 		return Etalon_profile(profile, tau, obs_window);
+	}
 
 	int ratio = int (tau/tau_new);
 
@@ -105,20 +123,25 @@ Etalon_profile Etalon_profile::scale_profile(double tau_new)
 		profile_new[k] = profile[n] + (profile[n+1] - profile[n]) * (double(k)*tau_new - double(n)*tau)/tau;
 	}
 
+	if (cfg->verbose)
+		cout << OK << endl;
+
 	return Etalon_profile(profile_new, tau_new, obs_window);
 
 }
 
-Etalon_profile make_tpl (vector<vector<double>>& profiles, double tau)
+Etalon_profile::Etalon_profile(vector<Int_profile>& profiles_series)
 {
-	size_t n = profiles.size();
+	if (cfg->verbose)
+		cout << "Constructing template profile" << endl;
 
-	vector<double> profile; 
-	vector<double> mean_profile;
+	int n = profiles_series.size();
 
-	mean_profile = profiles[0];
-	size_t obs_window = mean_profile.size();
+	profile = profiles_series[0].profile;
+	tau = profiles_series[0].session_info.get_TAU();
+	obs_window = profiles_series[0].session_info.get_OBS_WINDOW();
 
+	vector<double> current_int (obs_window);
 
 	vector<double> ccf (2*obs_window);
 
@@ -126,31 +149,33 @@ Etalon_profile make_tpl (vector<vector<double>>& profiles, double tau)
 	vector<double> near_max(5), coefficients(5), derivative (4);
 
 	double max; 
-	size_t max_pos;
+	int max_pos;
 
-	for (size_t i = 1; i < n; i++)
+	for (int i = 1; i < n; i++)
 	{
-		profile = profiles[i];
+		current_int = profiles_series[i].profile;
 
 		// check the size of current vector
-		if (profile.size() > obs_window)
-			profile.erase(profile.begin() + obs_window+1);
-		else if (profile.size() < obs_window)
+		if ((int) current_int.size() > obs_window)
 		{
-			profile.reserve(obs_window - profile.size());
+			current_int.resize(obs_window);
+		}
+		else if ((int) current_int.size() < obs_window)
+		{
+			current_int.reserve(obs_window - current_int.size());
 
-			for (size_t i = profile.size(); i < obs_window; i ++)
-			       profile.push_back(0.0);	
+			for (int i = current_int.size(); i < obs_window; i ++)
+			       current_int.push_back(0.0);	
 		}
 
 		// correlation of profiles
-		for (size_t j = 0; j < 2*obs_window; j++)
-			ccf[j] = discrete_ccf(mean_profile, profile, j - obs_window);
+		for (int j = 0; j < 2*obs_window; j++)
+			ccf[j] = discrete_ccf(current_int, profile, j - obs_window);
 		
 		max = 0.0;
 		max_pos = 0;
 
-		for (size_t j = 0; j < 2*obs_window; j++)
+		for (int j = 0; j < 2*obs_window; j++)
 		{
 			if (ccf[j] > max)
 			{
@@ -158,9 +183,9 @@ Etalon_profile make_tpl (vector<vector<double>>& profiles, double tau)
 				max_pos = j;
 			}
 		}
-
-		for (size_t j = -2; j < 3; j++)
-			near_max[i+2] = ccf[max_pos + i]/max;
+		 
+		for (int j = -2; j < 3; j++)
+			near_max[j+2] = ccf[max_pos + j]/max;
 
 		coefficients = interpolation4(near_max);
 
@@ -171,17 +196,45 @@ Etalon_profile make_tpl (vector<vector<double>>& profiles, double tau)
 
 		reper_dec =  find_root(derivative, -1.0, 1.0);
 
-		move_continous(profile, (double) max_pos + reper_dec);
+		move_continous(current_int, (double) max_pos + reper_dec);
 
-		for (size_t j = 0; j < obs_window; j++)
-			mean_profile[j] += profile[j];
+		for (int j = 0; j < obs_window; j++)
+			profile[j] += current_int[j];
+
 	}	
 
+	normilize();
+}
 
-	Etalon_profile result (mean_profile, tau, (int) obs_window);
-	result.normilize();
+double Etalon_profile::get_SNR()
+{
+	double snr;
 
-	return result;
+	// find level of noise as
+	// 1.0% of maximum of signal
+
+	// max is equal 1.0
+	//for (int i = 0; i < obs_window; i++)
+	//	if (max < profile[i]) max = profile[i];
+
+	double max = 1e-1;
+
+	vector<double> noise_vec;
+	noise_vec.reserve(obs_window);
+
+	for (int i = 0; i < obs_window; i++)
+	{
+		if(profile[i] < max)
+		{
+			noise_vec.push_back(profile[i]);
+		}
+	}
+
+	double noise = sigma(noise_vec);
+
+	snr = 1.0/(noise);
+
+	return snr;
 }
 
 

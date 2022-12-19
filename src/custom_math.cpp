@@ -181,7 +181,6 @@ double find_root (vector<double> p, double left, double right)
 
 void move_continous(vector<double>& vec, double bias)
 {
-
 	int delta_int = int(bias);
 	double delta_dec = bias - double(delta_int);
 
@@ -192,7 +191,7 @@ void move_continous(vector<double>& vec, double bias)
 	for (int j = 0; j < n; j ++)
 	{
 		temp_1[j] = vec[(j + delta_int) % n];
-		temp_1[j] = vec[(j + delta_int + 1) % n];
+		temp_2[j] = vec[(j + delta_int + 1) % n];
 	}
 
 	for(int j = 0; j < n; j++)

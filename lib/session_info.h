@@ -12,7 +12,7 @@ class Session_info
 {
 public:
 	Session_info();
-	Session_info(string file_name);
+	Session_info(string file_name, bool binary);
 
 	void add_parameter(char* buffer);
 
@@ -37,7 +37,7 @@ public:
 	double get_FREQ_MAX();
 	int get_CHANELS();
 
-	void operator=(Session_info& right);
+	//void operator=(Session_info& right);
 
 private:
 	int number_params;

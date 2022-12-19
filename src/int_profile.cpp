@@ -8,14 +8,15 @@
 #include<vector>
 #include<iostream>
 #include<fstream>
+#include<cstdio>
 
 using namespace std;
 
-extern Configuration cfg;
+extern Configuration *cfg;
 
 Int_profile::Int_profile(Raw_profile& raw) : session_info()
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << "Making integral profile" << endl;
 
 	session_info = raw.session_info;
@@ -49,7 +50,7 @@ Int_profile::Int_profile(Raw_profile& raw) : session_info()
 
 Int_profile::Int_profile(Raw_profile& raw, vector<double> mask) : session_info()
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << "Making integral profile" << endl;
 
 	session_info = raw.session_info;
@@ -66,7 +67,7 @@ Int_profile::Int_profile(Raw_profile& raw, vector<double> mask) : session_info()
 	profile = vector<double> (obs_window);
 
 	for (int j = 0; j < obs_window; j++)
-		profile[j] = 0;
+		profile[j] = 0.0;
 
 	average_profiles(mask);
 
@@ -82,17 +83,54 @@ Int_profile::Int_profile(Raw_profile& raw, vector<double> mask) : session_info()
 }
 
 
-Int_profile::Int_profile (string file_name) : session_info(file_name)
+Int_profile::Int_profile (string file_name) : session_info(file_name, false)
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << "Reading integral profile" << endl;
 
+	ifstream obs_file (file_name, ios::in);
 
+	if (!obs_file)
+		throw invalid_argument (string(ERROR) + "Cann't open observational file to read data" + file_name);
+
+	int obs_window = session_info.get_OBS_WINDOW();
+
+	compensated_signal_per_chanel = vector (1, vector<double>(obs_window));
+	profile = vector<double> (obs_window);
+
+	string buffer;
+
+	// skip header of file
+	for (int i = 0; i < session_info.get_NUM_PARAMS(); i++)
+		getline(obs_file, buffer);	
+	
+	for (int i = 0; i < obs_window; i++)
+	{
+		getline(obs_file, buffer);	
+
+		// delete first column of input: time
+		buffer = buffer.substr(buffer.find(' ') + 1);
+
+		// change decimal comma to decimal point
+		size_t pos = buffer.find(',');
+		if (pos < 200)
+			buffer[pos] = '.';
+
+		profile[i] = stod(buffer);
+	}
+
+	normilize_profile();
+
+	toa = 0.0l;
+	toa_error = 0.0l;
+
+	snr = 0.0;
+	snr = get_SNR();
 }
 
 void Int_profile::calculate_chanel_delay(vector<double>& chanel_delay)
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << SUB << "Calculating chanel delay...";
 
 	double dm = session_info.get_DM();
@@ -111,13 +149,13 @@ void Int_profile::calculate_chanel_delay(vector<double>& chanel_delay)
 	}
 	
 
-	if (cfg.verbose)
-		cout << OK << endl;;
+	if (cfg->verbose)
+		cout << OK << endl;
 }
 
 void Int_profile::move_chanel_profiles(Raw_profile* raw, std::vector<double>& chanel_delay)
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << SUB << "Moving chanel profiles...";
 
 	double tau = session_info.get_TAU();
@@ -169,14 +207,14 @@ void Int_profile::move_chanel_profiles(Raw_profile* raw, std::vector<double>& ch
 		}
 	}
 
-	if (cfg.verbose)
-		cout << OK << endl;;
+	if (cfg->verbose)
+		cout << OK << endl;
 }
 
 
 void Int_profile::average_profiles()
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << SUB << "Averaging chanel profiles...";
 
 	int chanels = session_info.get_CHANELS();
@@ -190,13 +228,13 @@ void Int_profile::average_profiles()
 		}
 	}
 
-	if (cfg.verbose)
-		cout << OK << endl;;
+	if (cfg->verbose)
+		cout << OK << endl;
 }
 
 void Int_profile::average_profiles(vector<double> mask)
 {
-	if (cfg.verbose)
+	if (cfg->verbose)
 		cout << SUB << "Averaging chanel profiles whith mask...";
 
 	int chanels = session_info.get_CHANELS();
@@ -210,14 +248,14 @@ void Int_profile::average_profiles(vector<double> mask)
 		}
 	}
 	
-	if (cfg.verbose)
-		cout << OK << endl;;
+	if (cfg->verbose)
+		cout << OK << endl;
 }
 
 void Int_profile::normilize_profile()
 {
-	if (cfg.verbose)
-		cout << SUB << "Normilizing integral profiles...";
+	if (cfg->verbose)
+		cout << SUB << "Normilizing integral profile...";
 
 	int obs_window = session_info.get_OBS_WINDOW();
 
@@ -236,8 +274,8 @@ void Int_profile::normilize_profile()
 	for (int j = 0; j < obs_window; j++)
 		profile[j] = (profile[j] - min)/norm_factor;
 
-	if (cfg.verbose)
-		cout << OK << endl;;
+	if (cfg->verbose)
+		cout << OK << endl;
 }
 
 
@@ -249,22 +287,23 @@ long double Int_profile::get_TOA(Etalon_profile& etalon_in)
 	}
 	else
 	{
-		if (cfg.verbose)
-			cout << SUB << "Calculating TOA...";
-
 		// Define etalon profile and scale it if it's nesesssery
 		Etalon_profile etalon (etalon_in.profile, etalon_in.get_TAU(), etalon_in.get_OBS_WINDOW());
 		etalon = etalon.scale_profile(session_info.get_TAU());
+
+		if (cfg->verbose)
+			cout << SUB << "Calculating TOA...";
 
 		double reper_point = get_reper_point(etalon); 
 
 		long double mjd_start = session_info.get_START_UTC().get_MJD();
 
+		if (cfg->verbose)
+			cout << OK << endl;
 
-		if (cfg.verbose)
-			cout << OK << endl;;
+		toa = mjd_start + (long double) (reper_point*session_info.get_TAU())*1e-3/86400.0l;
 
-		return mjd_start + (long double) (reper_point*session_info.get_TAU())*1e-3/86400.0l;
+		return toa;
 	}
 }
 
@@ -342,7 +381,7 @@ double Int_profile::get_ERROR()
 	}
 	else
 	{
-		if (cfg.verbose)
+		if (cfg->verbose)
 			cout << SUB << "Calculating TOA error...";
 
 		int obs_window = session_info.get_OBS_WINDOW();
@@ -381,7 +420,8 @@ double Int_profile::get_ERROR()
 
 		toa_error = 0.3*double(k2-k1)*session_info.get_TAU()/get_SNR();	
 
-		cout << OK << endl;
+		if (cfg->verbose)
+			cout << OK << endl;
 
 		return toa_error;
 	}
@@ -426,14 +466,67 @@ double Int_profile::get_SNR()
 	}
 }
 
+void Int_profile::read_freq_comp (string file_name)
+{
+	ifstream obs_file(file_name, ios::in);
+	string buffer, name;
+
+	if (!obs_file)
+		throw invalid_argument (string(ERROR) + "Cann't open observational file to read header" + file_name);
+
+	int i = 0;
+
+	while (getline (obs_file, buffer))
+	{
+		name = buffer.substr(0, buffer.find(' '));
+
+		if (name == "Fcomp" || name == "freq_comp")
+		{
+			try
+			{
+				freq_comp = stod(buffer.substr(buffer.find(' ') + 1));
+			}
+			catch (const invalid_argument &err)
+			{
+				throw invalid_argument (string(ERROR) + "Cann't read comparsion frequency from integral profile file");
+			}
+		}
+
+		i++;	
+		if (i == session_info.get_NUM_PARAMS())
+			break;
+	}
+}
+
+double Int_profile::get_FREQ_COMP() {return freq_comp;}
+
 void Int_profile::print(string file_name)
 {
 	session_info.print(file_name, freq_comp);
 
+	double tau = session_info.get_TAU();
+
 	ofstream out (file_name, ios_base::app);
+	out.precision(8);
 
 	for (int i = 0; i < session_info.get_OBS_WINDOW(); i++)
-		out << profile[i] << endl;	
+		out << tau * (double) i << " " << profile[i] << endl;	
 
 	out.close();
+}
+
+void Int_profile::ITOA()
+{
+	string file_name = cfg->output_dir + "toa";
+
+	FILE *out = fopen (file_name.c_str(), "a+");
+	
+	char* format = (char*) "%-9s%18.12Lf%6.1f%11.3f%11f %3s\n";
+
+	const char* name;
+	name = session_info.get_PSR_NAME().c_str();
+
+	fprintf(out, format, name, toa, toa_error*1e3, freq_comp, 0.0, "PO");
+
+	fclose(out);
 }

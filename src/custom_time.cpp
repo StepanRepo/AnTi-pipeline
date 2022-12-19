@@ -28,7 +28,7 @@ Custom_time::Custom_time (string time_s)
 	}
 	catch (const invalid_argument &err)
 	{
-		throw invalid_argument (string(ERROR) + "Cann't read time string value");
+		throw invalid_argument (string(ERROR) + "Cann't read time string value: " + time_s);
 	}
 
 	mjd = 0.0l;
@@ -67,6 +67,10 @@ void Custom_time::calculate_mjd()
 	mjd += 1721028.0l - 2400000.0l + h/24.0l + min/1440.0l + s/86400.0l;
 }
 
+void Custom_time::print()
+{
+	cout << day << "." << month << "." << year << " " << hour << ":" << minute << ":" << second << endl; 
+}
 
 int Custom_time::get_YEAR() {return year;}
 int Custom_time::get_MONTH() {return month;}

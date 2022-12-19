@@ -10,6 +10,7 @@ class Configuration
 {
 	public:
 		Configuration(string file_name = "default.cfg");
+		void command_line(int argc, char** argv);
 
 		bool verbose;
 

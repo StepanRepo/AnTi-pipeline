@@ -28,6 +28,8 @@ class Custom_time
 		void set_MINUTE(int);
 		void set_SECOND(long double);
 
+		void print();
+
 	private:
 		int year;
 		int month;
