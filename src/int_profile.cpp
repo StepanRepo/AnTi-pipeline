@@ -445,10 +445,11 @@ double Int_profile::get_SNR()
 		//for (int i = 0; i < obs_window; i++)
 		//	if (max < profile[i]) max = profile[i];
 
-		double max = 1e-1;
+		double max = 2.0*median(profile);
 
-		vector<double> noise_vec;
+		vector<double> noise_vec, signal_vec;
 		noise_vec.reserve(obs_window);
+		signal_vec.reserve(obs_window);
 
 		for (int i = 0; i < obs_window; i++)
 		{
@@ -456,11 +457,18 @@ double Int_profile::get_SNR()
 			{
 				noise_vec.push_back(profile[i]);
 			}
+			else
+				signal_vec.push_back(profile[i]);
 		}
+
+		double signal_power = 0.0;
+		for (int i = 0; i < (int) signal_vec.size(); i++)
+			signal_power += signal_vec[i];
+		signal_power /= (double) signal_vec.size();
 
 		double noise = sigma(noise_vec);
 
-		snr = 1.0/(noise);
+		snr = signal_power/(noise);
 
 		return snr;
 	}

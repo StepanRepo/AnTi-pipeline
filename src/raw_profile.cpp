@@ -3,6 +3,14 @@
 #include"../lib/configuration.h"
 #include"../lib/massages.h"
 
+#include <ctime>
+
+#ifdef __AVX__
+  #include <immintrin.h>
+#else
+  #warning AVX is not available. Code will not compile!
+#endif
+
 #include<string>
 #include<fstream>
 #include<iostream>
@@ -28,6 +36,7 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 
 	double* signal;
 	signal = new double[OBS_SIZE];
+
 	decode_data(data, signal);
 
 	mean_signal_per_chanel = vector (chanels, vector<double>(obs_window));
@@ -88,7 +97,7 @@ void Raw_profile::decode_data(byte32* data, double* signal)
 		}
 	}
 
-	if (cfg->verbose)
+		if (cfg->verbose)
 		cout << OK << endl;
 }
 
@@ -106,7 +115,7 @@ void Raw_profile::split_data (double* signal)
 	{      
 
 #pragma omp for
-		for (int i = 0; i < 512; i++)
+		for (int i = 0; i < chanels; i++)
 			fill(mean_signal_per_chanel[i].begin(), mean_signal_per_chanel[i].end(), 0.0);
 
 		int chan_and_window = chanels*obs_window;

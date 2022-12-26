@@ -208,6 +208,12 @@ int main (int argc, char *argv[])
 						fr->median_filter(cfg->median_threshold);
 				}
 
+				if (cfg->get_fr)
+				{
+					fr->print(cfg->output_dir + file_name + ".fr");
+					fr->print_masked(cfg->output_dir + "masked_" + file_name + ".fr");
+				}
+
 				int_prf = new Int_profile (*raw, fr->mask);
 				int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
 			}
@@ -233,7 +239,7 @@ int main (int argc, char *argv[])
 			int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
 		}
 
-		cout << endl << "TOA was calculated for " << cfg->files.size() << " integral profiles" << endl;
+		cout << endl << "TOA was calculated for " << cfg->files.size() - error_list.size() << " integral profiles" << endl;
 	}
 
 	if (error_list.size() > 0)

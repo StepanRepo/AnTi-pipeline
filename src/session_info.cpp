@@ -48,7 +48,7 @@ Session_info::Session_info(string file_name, bool binary) : start_date (0, 0, 0,
 
 
 	if (!obs_file)
-		throw invalid_argument (string(ERROR) + "Cann't open observational file to read header" + file_name);
+		throw invalid_argument (string(ERROR) + "Cann't open observational file to read header " + file_name);
 
 	string name, value;
 
