@@ -23,6 +23,7 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 {
 	if (cfg->verbose)
 		cout << "Making raw profile" << endl;
+
 	int total_pulses = session_info.get_TOTAL_PULSES();
 	int obs_window = session_info.get_OBS_WINDOW();
 	int chanels = session_info.get_CHANELS();
@@ -42,6 +43,12 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 	mean_signal_per_chanel = vector (chanels, vector<double>(obs_window));
 
 	split_data(signal);
+
+	delete[] data;
+	delete[] signal;
+
+	data = nullptr;
+	signal = nullptr;
 }
 
 

@@ -89,7 +89,7 @@ Session_info::Session_info(string file_name, bool binary) : start_date (0, 0, 0,
 			start_date_s = value;
 
 		else if (name == "time")
-			start_date_s = start_date_s.substr(0, start_date_s.find(' ')) + " " + value;
+			start_date_s = start_date_s.substr(0, start_date_s.find(' ')) + value;
 		
 		else if (name == "period")
 			psr_period = stold(value);
@@ -119,14 +119,7 @@ Session_info::Session_info(string file_name, bool binary) : start_date (0, 0, 0,
 			freq_max = stod(value);
 
 		else if (name == "dt_utc")
-		{
-			if (value.substr(6, 2) != "20")
-				value = value.substr(0, 6) + "20" + value.substr(6);
-
 			start_utc_s = value;
-		}
-
-
 	}
 
 	obs_file.close();

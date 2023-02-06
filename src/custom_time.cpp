@@ -15,6 +15,9 @@ Custom_time::Custom_time (string time_s)
 
 	time_s.erase(std::remove_if(time_s.begin(), time_s.end(), ::isspace), time_s.end());
 
+	if (time_s.length() == 23)
+		time_s = time_s.substr(0, 6) + "20" + time_s.substr(6);
+
 	try
 	{
 		day = stoi(time_s.substr(0, 2));

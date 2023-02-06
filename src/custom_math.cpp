@@ -63,7 +63,7 @@ double sigma(vector<double>& vec)
 
 	double m = mean(a);
 
-	for (int i = 0; i < (int) a.size(); i++)
+	for (int i = 0; i < n; i++)
 		deviation += (a[i] - m)*(a[i] - m);
 
 	deviation = sqrt(deviation/double(n-1));

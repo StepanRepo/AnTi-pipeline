@@ -6,6 +6,7 @@
 #include"../lib/massages.h"
 
 #include<vector>
+#include<math.h>
 #include<iostream>
 #include<fstream>
 #include<cstdio>
@@ -441,10 +442,6 @@ double Int_profile::get_SNR()
 		// find level of noise as
 		// 1.0% of maximum of signal
 
-		// max is equal 1.0
-		//for (int i = 0; i < obs_window; i++)
-		//	if (max < profile[i]) max = profile[i];
-
 		double max = 2.0*median(profile);
 
 		vector<double> noise_vec, signal_vec;
@@ -454,23 +451,18 @@ double Int_profile::get_SNR()
 		for (int i = 0; i < obs_window; i++)
 		{
 			if(profile[i] < max)
-			{
-				noise_vec.push_back(profile[i]);
-			}
+				noise_vec.push_back(profile[i]*profile[i]);
 			else
-				signal_vec.push_back(profile[i]);
+				signal_vec.push_back(profile[i]*profile[i]);
 		}
 
-		double signal_power = 0.0;
-		for (int i = 0; i < (int) signal_vec.size(); i++)
-			signal_power += signal_vec[i];
-		signal_power /= (double) signal_vec.size();
 
-		double noise = sigma(noise_vec);
+		double signal = mean(signal_vec);
+		double noise = mean(noise_vec);
 
-		snr = signal_power/(noise);
+		snr = signal/noise;
 
-		return snr;
+		return sqrt(snr);
 	}
 }
 

@@ -20,6 +20,7 @@ int main (int argc, char *argv[])
 	// section for reading configuration file name from CL
 	int i;
 
+	// is exists custom configuration file?
 	for (i = 1; i < argc; i++)
 	{
 		if (argv[i][0] == '-')
@@ -31,6 +32,7 @@ int main (int argc, char *argv[])
 		}
 	}
 
+	// there aren't custom configuration file
 	if (i == argc)
 		cfg = new Configuration();
 
@@ -216,6 +218,12 @@ int main (int argc, char *argv[])
 
 				int_prf = new Int_profile (*raw, fr->mask);
 				int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
+
+				delete raw;
+				delete fr;
+
+				raw = nullptr;
+				fr = nullptr;
 			}
 			else
 			{
@@ -237,9 +245,15 @@ int main (int argc, char *argv[])
 			}
 
 			int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
+
+			delete int_prf;
+			int_prf = nullptr;
 		}
 
 		cout << endl << "TOA was calculated for " << cfg->files.size() - error_list.size() << " integral profiles" << endl;
+
+		delete etalon_prf;
+		etalon_prf = nullptr;
 	}
 
 	if (error_list.size() > 0)
@@ -251,4 +265,7 @@ int main (int argc, char *argv[])
 			cout << i+1 << ". In file " << error_names[i] << ": " << error_list[i] << endl;
 		}
 	}
+
+	delete cfg;
+	cfg = nullptr;
 }
