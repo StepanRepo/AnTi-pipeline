@@ -8,6 +8,7 @@
 #include<fstream>
 #include<vector>
 #include<string>
+#include<math.h>
 
 using namespace std;
 
@@ -208,33 +209,27 @@ Etalon_profile::Etalon_profile(vector<Int_profile>& profiles_series)
 
 double Etalon_profile::get_SNR()
 {
-	double snr;
+	double max = 2.0*median(profile);
 
-	// find level of noise as
-	// 1.0% of maximum of signal
-
-	// max is equal 1.0
-	//for (int i = 0; i < obs_window; i++)
-	//	if (max < profile[i]) max = profile[i];
-
-	double max = 1e-1;
-
-	vector<double> noise_vec;
+	vector<double> noise_vec, signal_vec;
 	noise_vec.reserve(obs_window);
+	signal_vec.reserve(obs_window);
 
 	for (int i = 0; i < obs_window; i++)
 	{
 		if(profile[i] < max)
-		{
-			noise_vec.push_back(profile[i]);
-		}
+			noise_vec.push_back(profile[i]*profile[i]);
+		else
+			signal_vec.push_back(profile[i]*profile[i]);
 	}
 
-	double noise = sigma(noise_vec);
 
-	snr = 1.0/(noise);
+	double signal = mean(signal_vec);
+	double noise = mean(noise_vec);
 
-	return snr;
+	double snr = signal/noise;
+
+	return sqrt(snr);
 }
 
 

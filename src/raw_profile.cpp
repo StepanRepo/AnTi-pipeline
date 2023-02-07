@@ -14,12 +14,14 @@
 #include<string>
 #include<fstream>
 #include<iostream>
+#include <malloc.h>
+
 
 using namespace std;
 
 extern Configuration* cfg;
 
-Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
+Raw_profile::Raw_profile(string file_name, byte32* data, double* signal, size_t len) : session_info(file_name, true)
 {
 	if (cfg->verbose)
 		cout << "Making raw profile" << endl;
@@ -30,25 +32,40 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 
 	OBS_SIZE = total_pulses*obs_window*chanels;
 
-	byte32* data;
-	data = new byte32 [OBS_SIZE];
+	if (data != nullptr && signal != nullptr && len < (size_t) OBS_SIZE)
+		throw invalid_argument (string(ERROR) + "Size of reserved memory is too small");
+
+	bool is_data_plased = false, is_signal_placed = false;
+
+	if (data == nullptr)
+	{
+		data = new byte32[OBS_SIZE];
+		is_data_plased = true;
+	}
+
+	if (signal == nullptr)
+	{
+		signal = new double[OBS_SIZE];
+		is_signal_placed = true;
+	}
 
 	read_data(file_name, data);
-
-	double* signal;
-	signal = new double[OBS_SIZE];
-
 	decode_data(data, signal);
 
 	mean_signal_per_chanel = vector (chanels, vector<double>(obs_window));
 
 	split_data(signal);
 
-	delete[] data;
-	delete[] signal;
-
-	data = nullptr;
-	signal = nullptr;
+	if (is_data_plased)
+	{
+		delete[] data;
+		data = nullptr;
+	}
+	if(is_signal_placed)
+	{
+		delete[] signal;
+		signal = nullptr;
+	}
 }
 
 
@@ -88,7 +105,7 @@ void Raw_profile::decode_data(byte32* data, double* signal)
 
 
 #pragma omp for
-		for (int i = 0; i < OBS_SIZE; i++)
+		for (int i = 0; i < OBS_SIZE; ++i)
 		{
 			spectr_t = double (data[i].as_int & 0xFFFFFF);
 
@@ -122,17 +139,17 @@ void Raw_profile::split_data (double* signal)
 	{      
 
 #pragma omp for
-		for (int i = 0; i < chanels; i++)
+		for (int i = 0; i < chanels; ++i)
 			fill(mean_signal_per_chanel[i].begin(), mean_signal_per_chanel[i].end(), 0.0);
 
 		int chan_and_window = chanels*obs_window;
 
 #pragma omp for 
-		for (int imp = 0; imp < total_pulses; imp ++)
+		for (int imp = 0; imp < total_pulses; ++imp)
 		{
-			for (int k = 0; k < obs_window; k ++)
+			for (int k = 0; k < obs_window; ++k)
 			{
-				for (int i = 0; i < chanels; i++)
+				for (int i = 0; i < chanels; ++i)
 				{
 					mean_signal_per_chanel[i][k] += signal[i + k*chanels + imp*chan_and_window];
 				}

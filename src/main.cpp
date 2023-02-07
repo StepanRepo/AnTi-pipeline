@@ -15,6 +15,131 @@ using namespace std;
 
 Configuration* cfg;
 
+static Raw_profile* raw;
+static Frequency_response* fr;
+static Etalon_profile *etalon_prf;
+static Int_profile *int_prf;
+
+vector<string> error_list, error_names;
+
+long long find_max_size()
+{
+	long long max = 0;
+	long long file_size;
+
+	string file_name;
+
+	for (size_t i = 0; i < cfg->files.size(); ++i)
+	{
+		file_name = cfg->files[i];
+
+		ifstream in_file(cfg->rawdata_dir + "/" + file_name, ios::binary);
+		in_file.seekg(0, ios::end);
+
+		file_size = in_file.tellg();
+
+		if (file_size > max)
+			max = file_size;
+	}	
+
+	return max;
+}
+
+int make_raw_prf (string& file_name, byte32* data, double* signal, size_t reserve_size)
+{
+	try
+	{
+		raw = new Raw_profile (cfg->rawdata_dir + file_name, data, signal, reserve_size);
+	}
+	catch (const invalid_argument &err)
+	{
+		if (cfg->verbose)
+			cout << err.what() << endl;
+
+		error_list.push_back(err.what());
+		error_names.push_back(file_name);
+
+		return 1;
+	}
+
+	fr = new Frequency_response (*raw);
+
+	if (cfg->do_filtration)
+	{
+		if (cfg->is_deriv_width)
+			fr->derivative_filter(cfg->deriv_threshold, cfg->deriv_width);
+		else 
+			fr->derivative_filter(cfg->deriv_threshold);
+
+		if (cfg->is_median_width)
+			fr->median_filter(cfg->median_threshold, cfg->median_width);
+		else
+			fr->median_filter(cfg->median_threshold);
+	}
+
+	if (cfg->get_fr)
+	{
+		fr->print(cfg->output_dir + file_name + ".fr");
+		fr->print_masked(cfg->output_dir + "masked_" + file_name + ".fr");
+	}
+
+	return 0;
+}
+
+
+
+
+int make_int_prf (string& file_name, byte32* data, double* signal, size_t reserve_size)
+{
+	if (cfg->verbose)
+		cout << endl << BOLD << "Processing of file: " << file_name << RESET << endl;
+
+	string ext = file_name.substr(file_name.find('.') + 1);
+
+	if (ext == "prf" || ext == "srez")
+	{
+		try
+		{
+			int_prf = new Int_profile (cfg->rawdata_dir + file_name);
+			int_prf->read_freq_comp(cfg->rawdata_dir + file_name);
+		}
+		catch (const invalid_argument &err)
+		{
+			if (cfg->verbose)
+				cout << err.what() << endl;
+
+			error_list.push_back(err.what());
+			error_names.push_back(file_name);
+
+			return 1;
+		}
+	}
+	else if (ext == file_name)
+	{
+		if (make_raw_prf(file_name, data, signal, reserve_size))
+			return 1;
+
+		int_prf = new Int_profile (*raw, fr->mask);
+		int_prf->print(cfg->output_dir + file_name + ".prf");
+
+		delete raw;
+		delete fr;
+
+		raw = nullptr;
+		fr = nullptr;
+	}
+	else
+	{
+		cout << WARNING << "Unknown file format: " << file_name << endl;
+		return 1;
+	}
+
+	return 0;
+}
+
+
+
+
 int main (int argc, char *argv[])
 {
 	// section for reading configuration file name from CL
@@ -32,24 +157,19 @@ int main (int argc, char *argv[])
 		}
 	}
 
-	// there aren't custom configuration file
+	// if there aren't custom configuration file
 	if (i == argc)
 		cfg = new Configuration();
 
 	cfg->command_line(argc, argv);
 
 
-	Raw_profile *raw;
-	Frequency_response *fr;
-	Etalon_profile *etalon_prf;
-	Int_profile *int_prf;
 
-	long double toa;
-	double toa_error;
+	// reserve memory section
+	long long reserve_size = find_max_size()/4;	// approximately equal number of points in raw profile
 
-	string ext;
-
-	vector<string> error_list, error_names;
+	byte32* data = new byte32[reserve_size];
+	double* signal = new double[reserve_size];
 
 	if (cfg->do_tpl)
 	{
@@ -60,71 +180,11 @@ int main (int argc, char *argv[])
 		for (size_t i = 0; i < cfg->files.size(); i++)
 		{
 			string file_name = cfg->files[i];
-			ext = file_name.substr(file_name.find('.') + 1);
 
-			if (cfg->verbose)
-				cout << endl << BOLD << "Processing of file: " << file_name << RESET << endl;
-
-			if (ext == "prf" || ext == "srez")
-			{
-				try
-				{
-					int_prf = new Int_profile (cfg->rawdata_dir + cfg->files[i]);
-					int_prf->read_freq_comp(cfg->rawdata_dir + cfg->files[i]);
-				}
-				catch (const invalid_argument &err)
-				{
-					if (cfg->verbose)
-						cout << err.what() << endl;
-
-					error_list.push_back(err.what());
-					error_names.push_back(file_name);
-
-					continue;
-				}
-			}
-			else if (ext == file_name)
-			{
-				try
-				{
-					raw = new Raw_profile (cfg->rawdata_dir + file_name);
-				}
-				catch (const invalid_argument &err)
-				{
-					if (cfg->verbose)
-						cout << err.what() << endl;
-
-					error_list.push_back(err.what());
-					error_names.push_back(file_name);
-
-					continue;
-				}
-
-				fr = new Frequency_response (*raw);
-
-				if (cfg->do_filtration)
-				{
-					if (cfg->is_deriv_width)
-						fr->derivative_filter(cfg->deriv_threshold, cfg->deriv_width);
-					else 
-						fr->derivative_filter(cfg->deriv_threshold);
-
-					if (cfg->is_median_width)
-						fr->median_filter(cfg->median_threshold, cfg->median_width);
-					else
-						fr->median_filter(cfg->median_threshold);
-				}
-
-				int_prf = new Int_profile (*raw, fr->mask);
-				int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
-			}
-			else
-			{
-				cout << WARNING << "Unknown file format: " << file_name << endl;
+			if (make_int_prf(file_name, data, signal, reserve_size))
 				continue;
-			}
 
-				profiles.push_back(*int_prf);
+			profiles.push_back(*int_prf);
 		}
 
 		etalon_prf = new Etalon_profile(profiles);
@@ -132,10 +192,17 @@ int main (int argc, char *argv[])
 
 		cout << endl << "Template profile was made from " << profiles.size() << " integral profiles" << endl;
 		cout << "SNR: " << etalon_prf->get_SNR() << endl;
+
+		delete etalon_prf;
+		etalon_prf = nullptr;
+
 	}
 	else
 	{
 		cout << "TOA calculating mode" << endl;
+
+		long double toa;
+		double toa_error;
 
 		try
 		{
@@ -155,81 +222,9 @@ int main (int argc, char *argv[])
 		for (size_t i = 0; i < cfg->files.size(); i++)
 		{
 			string file_name = cfg->files[i];
-			ext = file_name.substr(file_name.find('.') + 1);
 
-			if (cfg->verbose)
-				cout << endl << BOLD << "Processing of file: " << file_name << RESET << endl;
-
-			if (ext == "prf" || ext == "srez")
-			{
-				try
-				{
-					int_prf = new Int_profile (cfg->rawdata_dir + cfg->files[i]);
-					int_prf->read_freq_comp(cfg->rawdata_dir + cfg->files[i]);
-				}
-				catch (const invalid_argument &err)
-				{
-					if (cfg->verbose)
-						cout << err.what() << endl;
-
-					error_list.push_back(err.what());
-					error_names.push_back(file_name);
-
-					continue;
-				}
-			}
-			else if (ext == file_name)
-			{
-				try
-				{
-					raw = new Raw_profile (cfg->rawdata_dir + file_name);
-				}
-				catch (const invalid_argument &err)
-				{
-					if (cfg->verbose)
-						cout << err.what() << endl;
-
-					error_list.push_back(err.what());
-					error_names.push_back(file_name);
-
-					continue;
-				}
-
-				fr = new Frequency_response (*raw);
-
-				if (cfg->do_filtration)
-				{
-					if (cfg->is_deriv_width)
-						fr->derivative_filter(cfg->deriv_threshold, cfg->deriv_width);
-					else 
-						fr->derivative_filter(cfg->deriv_threshold);
-
-					if (cfg->is_median_width)
-						fr->median_filter(cfg->median_threshold, cfg->median_width);
-					else
-						fr->median_filter(cfg->median_threshold);
-				}
-
-				if (cfg->get_fr)
-				{
-					fr->print(cfg->output_dir + file_name + ".fr");
-					fr->print_masked(cfg->output_dir + "masked_" + file_name + ".fr");
-				}
-
-				int_prf = new Int_profile (*raw, fr->mask);
-				int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
-
-				delete raw;
-				delete fr;
-
-				raw = nullptr;
-				fr = nullptr;
-			}
-			else
-			{
-				cout << WARNING << "Unknown file format: " << file_name << endl;
+			if (make_int_prf(file_name, data, signal, reserve_size))
 				continue;
-			}
 
 			toa = int_prf->get_TOA(*etalon_prf);
 			toa_error = int_prf->get_ERROR();
@@ -240,8 +235,8 @@ int main (int argc, char *argv[])
 			{
 				cout.precision(24);
 				cout << endl << "TOA:  " << toa <<  " MJD" << endl;
-				cout << "SNR:  " << int_prf->get_SNR() << endl;
-				cout << "ERR:  " << toa_error*1e3 << " mcsec" << endl;
+				cout << "SNR:  " << (int) int_prf->get_SNR() << endl;
+				cout << "ERR:  " << (int) (toa_error*1e3) << " mcsec" << endl;
 			}
 
 			int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
@@ -254,6 +249,12 @@ int main (int argc, char *argv[])
 
 		delete etalon_prf;
 		etalon_prf = nullptr;
+
+		delete[] data;
+		data = nullptr;
+
+		delete[] signal;
+		signal = nullptr;
 	}
 
 	if (error_list.size() > 0)

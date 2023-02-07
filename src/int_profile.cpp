@@ -439,9 +439,6 @@ double Int_profile::get_SNR()
 	{
 		int obs_window = session_info.get_OBS_WINDOW();
 
-		// find level of noise as
-		// 1.0% of maximum of signal
-
 		double max = 2.0*median(profile);
 
 		vector<double> noise_vec, signal_vec;

@@ -16,7 +16,7 @@ typedef union byte32
 class Raw_profile
 {
     public:
-        Raw_profile(std::string);
+        Raw_profile(std::string, byte32* data = nullptr, double* signal = nullptr, size_t len = 0);
 
         Session_info session_info{};
         vector<vector<double>> mean_signal_per_chanel;
