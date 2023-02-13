@@ -28,7 +28,8 @@ class Raw_profile
         int OBS_SIZE;
 
         void read_data (std::string file_name, byte32 *data);
-        void decode_data (byte32 *data, double* signal);
+        //void decode_data (byte32 *data, double* signal);
+        void decode_data (string file_name, double* signal);
         void split_data (double* signal);
 
 };

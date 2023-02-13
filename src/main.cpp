@@ -10,6 +10,7 @@
 #include"../lib/configuration.h"
 #include"../lib/massages.h"
 
+#define RESERVATION_THRESOLD 1
 
 using namespace std;
 
@@ -168,9 +169,24 @@ int main (int argc, char *argv[])
 	// reserve memory section
 	long long reserve_size = find_max_size()/4;	// approximately equal number of points in raw profile
 
-	byte32* data = new byte32[reserve_size];
-	double* signal = new double[reserve_size];
 
+	byte32* data = nullptr;
+	double* signal = nullptr;
+
+	if (cfg->files.size() > RESERVATION_THRESOLD)
+	{
+		if (cfg->verbose)
+			cout << "Start memory reservation" << endl;
+
+		data = new byte32[reserve_size];
+		signal = new double[reserve_size];
+
+		if (cfg->verbose)
+			cout << "End memory reservation" << endl;
+	}
+
+
+	// Data processing section
 	if (cfg->do_tpl)
 	{
 		cout << "Do TPL mode" << endl;
@@ -249,14 +265,16 @@ int main (int argc, char *argv[])
 
 		delete etalon_prf;
 		etalon_prf = nullptr;
-
-		delete[] data;
-		data = nullptr;
-
-		delete[] signal;
-		signal = nullptr;
 	}
 
+	delete[] data;
+	data = nullptr;
+
+	delete[] signal;
+	signal = nullptr;
+
+
+	// Error duplication section
 	if (error_list.size() > 0)
 	{
 		cout << endl << "Duplication of errors:" << endl;

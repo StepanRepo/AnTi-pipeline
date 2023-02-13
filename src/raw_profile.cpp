@@ -3,12 +3,18 @@
 #include"../lib/configuration.h"
 #include"../lib/massages.h"
 
-#include <ctime>
+#include <chrono>
+
+// need libboost-dev:
+// sudo dnf install boost-devel
+#include <boost/interprocess/file_mapping.hpp>
+#include <boost/interprocess/mapped_region.hpp>
+
 
 #ifdef __AVX__
-  #include <immintrin.h>
+#include <immintrin.h>
 #else
-  #warning AVX is not available. Code will not compile!
+#warning AVX is not available. Code will not compile!
 #endif
 
 #include<string>
@@ -23,6 +29,7 @@ extern Configuration* cfg;
 
 Raw_profile::Raw_profile(string file_name, byte32* data, double* signal, size_t len) : session_info(file_name, true)
 {
+
 	if (cfg->verbose)
 		cout << "Making raw profile" << endl;
 
@@ -49,8 +56,16 @@ Raw_profile::Raw_profile(string file_name, byte32* data, double* signal, size_t 
 		is_signal_placed = true;
 	}
 
-	read_data(file_name, data);
-	decode_data(data, signal);
+	//read_data(file_name, data);
+	//decode_data(data, signal);
+	decode_data(file_name, signal);
+
+
+
+
+
+
+
 
 	mean_signal_per_chanel = vector (chanels, vector<double>(obs_window));
 
@@ -68,9 +83,10 @@ Raw_profile::Raw_profile(string file_name, byte32* data, double* signal, size_t 
 	}
 }
 
-
 void Raw_profile::read_data(string file_name, byte32* data)
 {
+	auto t1 = std::chrono::steady_clock::now();
+
 	if (cfg->verbose)
 		cout << SUB << "Reading data...";
 
@@ -91,10 +107,38 @@ void Raw_profile::read_data(string file_name, byte32* data)
 
 	if (cfg->verbose)
 		cout  << OK << endl;
+
+	auto t2 = std::chrono::steady_clock::now();
+	cout << "reading: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << endl;
 }
 
-void Raw_profile::decode_data(byte32* data, double* signal)
+//void Raw_profile::decode_data(byte32* data, double* signal)
+void Raw_profile::decode_data(string file_name, double* signal)
 {
+	int HEADER_SIZE = 13*40;	
+
+
+	if (cfg->verbose)
+		cout << SUB << "Reading data...";
+	auto t1 = std::chrono::steady_clock::now();
+
+
+	// Create the file mapping
+	boost::interprocess::file_mapping fm(file_name.c_str(), boost::interprocess::read_only);
+	// Map the file in memory
+	boost::interprocess::mapped_region region(fm, boost::interprocess::read_only);
+	// Get the address where the file has been mapped
+	byte32* data = (byte32 *) region.get_address() + HEADER_SIZE/4; 
+
+	if (cfg->verbose)
+		cout  << OK << endl;
+
+	auto t2 = std::chrono::steady_clock::now();
+	cout << "reading: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << endl;
+
+
+
+
 	if (cfg->verbose)
 		cout << SUB << "Decoding data...";
 
@@ -121,8 +165,11 @@ void Raw_profile::decode_data(byte32* data, double* signal)
 		}
 	}
 
-		if (cfg->verbose)
+	if (cfg->verbose)
 		cout << OK << endl;
+
+	auto t3 = std::chrono::steady_clock::now();
+	cout << "decoding: " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count() << endl;
 }
 
 void Raw_profile::split_data (double* signal)
@@ -159,7 +206,9 @@ void Raw_profile::split_data (double* signal)
 
 	if (cfg->verbose)
 		cout << OK << endl;
+
 }
+
 
 void Raw_profile::print_mean_channel(string file_name)
 {
