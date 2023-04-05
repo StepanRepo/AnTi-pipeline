@@ -56,15 +56,9 @@ Raw_profile::Raw_profile(string file_name, byte32* data, double* signal, size_t 
 		is_signal_placed = true;
 	}
 
-	//read_data(file_name, data);
-	//decode_data(data, signal);
-	decode_data(file_name, signal);
 
-
-
-
-
-
+	read_data(file_name, data);
+	decode_data(data, signal);
 
 
 	mean_signal_per_chanel = vector (chanels, vector<double>(obs_window));
@@ -85,42 +79,35 @@ Raw_profile::Raw_profile(string file_name, byte32* data, double* signal, size_t 
 
 void Raw_profile::read_data(string file_name, byte32* data)
 {
-	auto t1 = std::chrono::steady_clock::now();
-
+//	auto t1 = std::chrono::steady_clock::now();
+//
+//	if (cfg->verbose)
+//		cout << SUB << "Reading data...";
+//
+//
+//	ifstream obs_file (file_name, ios::in | ios::binary);
+//
+//	if (!obs_file)
+//		throw invalid_argument (string(ERROR) + "Cann't open observational file to read data" + file_name);
+//
+//	// skip header of file
+//	for (int i = 0; i < session_info.get_NUM_PARAMS(); i++)
+//		obs_file.ignore(40, '\n');
+//
+//
+//	obs_file.read((data[0].as_char), 4*OBS_SIZE);
+//
+//	obs_file.close();
+//
+//	if (cfg->verbose)
+//		cout  << OK << endl;
+//
+//
 	if (cfg->verbose)
 		cout << SUB << "Reading data...";
-
-
-	ifstream obs_file (file_name, ios::in | ios::binary);
-
-	if (!obs_file)
-		throw invalid_argument (string(ERROR) + "Cann't open observational file to read data" + file_name);
-
-	// skip header of file
-	for (int i = 0; i < session_info.get_NUM_PARAMS(); i++)
-		obs_file.ignore(40, '\n');
-
-
-	obs_file.read((data[0].as_char), 4*OBS_SIZE);
-
-	obs_file.close();
-
-	if (cfg->verbose)
-		cout  << OK << endl;
-
-	auto t2 = std::chrono::steady_clock::now();
-	cout << "reading: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << endl;
-}
-
-//void Raw_profile::decode_data(byte32* data, double* signal)
-void Raw_profile::decode_data(string file_name, double* signal)
-{
+	auto t1 = std::chrono::steady_clock::now();
 	int HEADER_SIZE = 13*40;	
 
-
-	if (cfg->verbose)
-		cout << SUB << "Reading data...";
-	auto t1 = std::chrono::steady_clock::now();
 
 
 	// Create the file mapping
@@ -128,20 +115,27 @@ void Raw_profile::decode_data(string file_name, double* signal)
 	// Map the file in memory
 	boost::interprocess::mapped_region region(fm, boost::interprocess::read_only);
 	// Get the address where the file has been mapped
-	byte32* data = (byte32 *) region.get_address() + HEADER_SIZE/4; 
+	
+	byte32* ptr = (byte32*) region.get_address() + HEADER_SIZE/4;
+	
+	auto t2 = std::chrono::steady_clock::now();
+	memcpy(data, ptr, OBS_SIZE*4);
 
 	if (cfg->verbose)
 		cout  << OK << endl;
 
-	auto t2 = std::chrono::steady_clock::now();
-	cout << "reading: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << endl;
+	auto t3 = std::chrono::steady_clock::now();
+	cout << "reading1: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << endl;
+	cout << "reading2: " << std::chrono::duration_cast<std::chrono::milliseconds>(t3 - t2).count() << endl;
+}
 
-
-
+void Raw_profile::decode_data(byte32* data, double* signal)
+{
 
 	if (cfg->verbose)
 		cout << SUB << "Decoding data...";
 
+auto t2 = std::chrono::steady_clock::now();
 #pragma omp parallel default(private) shared(data, signal) 
 	{      
 		double exp, spectr_t;
