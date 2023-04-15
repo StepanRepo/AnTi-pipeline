@@ -142,8 +142,6 @@ double discrete_ccf (vector<double>& first_in, vector<double>& second, int delta
 
 	int bias = max_pos - size_f/2;
 
-	bias = 0;
-
 	move_continous(first, bias);
 
 	delta -= (double) bias;
