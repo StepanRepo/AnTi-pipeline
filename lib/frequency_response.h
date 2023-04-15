@@ -35,6 +35,7 @@ class Frequency_response
 
 		void fill_profile(vector<vector<double>>);
 		void fill_mask();
+		void throw_if_mask_is_null();
 
 };
 

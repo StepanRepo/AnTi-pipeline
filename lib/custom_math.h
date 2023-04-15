@@ -12,6 +12,7 @@ double sigma(vector<double>&);
 double sigma(vector<double>&, int, int);
 
 double discrete_ccf (vector<double>& first, vector<double>& second, int delta);
+double cycle_discrete_ccf (vector<double>& first, vector<double>& second, int delta);
 
 // functions for work with polynomials
 vector<double> interpolation4 (vector<double> f);

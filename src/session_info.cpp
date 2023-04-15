@@ -127,6 +127,7 @@ Session_info::Session_info(string file_name, bool binary) : start_date (0, 0, 0,
 	chanels = 512;
 
 	if (start_utc_s == "")
+
 		throw invalid_argument(string(ERROR) + "There is no utc time in observation file " + file_name);
 
 	start_date = Custom_time(start_date_s);

@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 errors = -Wall -Wextra -pedantic
 mem = -fbounds-check -g
-vectorization = -O3 -mavx2 -fopenmp -ffast-math #-fopt-info-vec-missed 
+vectorization = -O3 -mavx2 -ffast-math # -fopenmp #-fopt-info-vec-missed 
 
 msg = lib/massages.h
 

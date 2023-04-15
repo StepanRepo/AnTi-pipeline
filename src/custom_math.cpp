@@ -1,8 +1,12 @@
+#include"../lib/massages.h"
+#include"../lib/custom_math.h"
+
 #include <vector>
 #include <algorithm>
 #include <cmath>
 
 #include<iostream>
+#include<fstream>
 
 using namespace std;
 
@@ -83,11 +87,36 @@ double sigma(vector<double>& vec, int begin, int end)
 
 
 
-
-
-double discrete_ccf (vector<double>& first, vector<double>& second, int delta)
+double cycle_discrete_ccf (vector<double>& first, vector<double>& second, int delta)
 {
 	int size_f = first.capacity();
+	int size_s = second.capacity();
+
+	if (size_f > size_s)
+	{
+		for (int i = 0; i < size_f - size_s; ++i)
+			second.push_back(0.0);
+	}
+
+	double sum = 0.0;
+
+	if (delta >= 0)
+	{
+		for (int i = 0; i < size_f; i++)
+			sum += first[(i + delta)%size_f] * second[i]; 
+	}else
+	{
+		for (int i = 0; i < size_f; i++)
+			sum += first[i] * second[(i - delta)%size_s]; 
+	}
+
+	return sum;
+}
+
+
+double discrete_ccf (vector<double>& first_in, vector<double>& second, int delta)
+{
+	int size_f = first_in.capacity();
 	int size_s = second.capacity();
 
 	double sum = 0;
@@ -95,6 +124,29 @@ double discrete_ccf (vector<double>& first, vector<double>& second, int delta)
 
 	if (delta > size_f || delta < -size_s)
 		return 0.0;
+
+
+	int max_pos = 0;
+	double max = 0;
+
+	for (int i = 0; i < size_f; ++i)
+	{
+		if (first_in[i] > max)
+		{
+			max = first_in[i];
+			max_pos = i;
+		}
+	}
+
+	vector<double> first = first_in;
+
+	int bias = max_pos - size_f/2;
+
+	bias = 0;
+
+	move_continous(first, bias);
+
+	delta -= (double) bias;
 
 	if (delta >= 0)
 	{
@@ -115,6 +167,8 @@ double discrete_ccf (vector<double>& first, vector<double>& second, int delta)
 	}
 
 	sum /= double(end);
+
+
 
 	return sum;
 }
@@ -152,10 +206,7 @@ double horner (vector<double>& p, double x)
 double find_root (vector<double> p, double left, double right)
 {
 	if (horner(p, left) * horner(p, right) > 0)
-	{
-		cout << "ERROR WHILE FINDING ROOT" << endl;
-		return 0.0;
-	}
+		throw invalid_argument (string(WARNING) + "Cann't find root");
 
 	double eps = 1e-16;
 	double root = 0.0;
@@ -177,10 +228,11 @@ double find_root (vector<double> p, double left, double right)
 	return root;
 }
 
-
-
 void move_continous(vector<double>& vec, double bias)
 {
+	if (bias < 0.0)
+		bias += (double) vec.size();
+
 	int delta_int = int(bias);
 	double delta_dec = bias - double(delta_int);
 
@@ -196,5 +248,4 @@ void move_continous(vector<double>& vec, double bias)
 
 	for(int j = 0; j < n; j++)
 		vec[j] = (1.0 - delta_dec)*temp_1[j] + delta_dec*temp_2[j];
-
 }

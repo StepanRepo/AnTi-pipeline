@@ -109,22 +109,29 @@ Etalon_profile Etalon_profile::scale_profile(double tau_new)
 		return Etalon_profile(profile, tau, obs_window);
 	}
 
-	int ratio = int (tau/tau_new);
+	double ratio = tau/tau_new;
 
-	int obs_window_new = obs_window * ratio;
+	int obs_window_new = (int) obs_window * ratio;
 	vector<double> profile_new = vector<double>(obs_window_new);
 
 	int n;
 
 	for (int k = 0; k < obs_window_new; k ++)
 	{
-		n = k * ratio;
+		n = (int) k / ratio;
 
 		profile_new[k] = profile[n] + (profile[n+1] - profile[n]) * (double(k)*tau_new - double(n)*tau)/tau;
 	}
 
 	if (cfg->verbose)
 		cout << OK << endl;
+
+	//ofstream out2 ("out/new_prf");
+	//for (int i = 0; i < obs_window_new; i++)
+	//{
+	//	out2 << profile_new[i] << endl;
+	//}
+	//out2.close();
 
 	return Etalon_profile(profile_new, tau_new, obs_window);
 
@@ -169,8 +176,10 @@ Etalon_profile::Etalon_profile(vector<Int_profile>& profiles_series)
 		}
 
 		// correlation of profiles
+		fill(ccf.begin(), ccf.end(), 0.0);
+
 		for (int j = 0; j < 2*obs_window; j++)
-			ccf[j] = discrete_ccf(current_int, profile, j - obs_window);
+			ccf[j] = cycle_discrete_ccf(current_int, profile, j - obs_window);
 		
 		max = 0.0;
 		max_pos = 0;
@@ -183,7 +192,7 @@ Etalon_profile::Etalon_profile(vector<Int_profile>& profiles_series)
 				max_pos = j;
 			}
 		}
-		 
+
 		for (int j = -2; j < 3; j++)
 			near_max[j+2] = ccf[max_pos + j]/max;
 
@@ -194,7 +203,14 @@ Etalon_profile::Etalon_profile(vector<Int_profile>& profiles_series)
 		derivative[2] = 2.0*coefficients[2];
 		derivative[3] = coefficients[3];
 
-		reper_dec =  find_root(derivative, -1.0, 1.0);
+		try
+		{
+			reper_dec =  find_root(derivative, -1.0, 1.0);
+		}
+		catch (const invalid_argument &err)
+		{
+			continue;
+		}
 
 		move_continous(current_int, (double) max_pos + reper_dec);
 

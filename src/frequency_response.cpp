@@ -68,6 +68,21 @@ void Frequency_response::fill_mask()
 
 }
 
+
+void Frequency_response::throw_if_mask_is_null()
+{
+	double mask_sum = 0;
+	for (int i = 0; i < session_info.get_CHANELS(); ++i)
+		mask_sum += mask[i]*profile[i];
+
+
+	if(mask_sum == 0.0)
+	{
+		cout << endl;
+		throw invalid_argument (string(WARNING) + "Bad frequency response in file");
+	}
+}
+
 void Frequency_response::derivative_filter(double p1)
 {
 	if (cfg->verbose)
@@ -82,6 +97,11 @@ void Frequency_response::derivative_filter(double p1)
 			mask[i] = 0.0;
 		}
 	}
+
+	mask[0] = 0.0;
+	mask[session_info.get_CHANELS()-1] = 0.0;
+
+	throw_if_mask_is_null();
 
 	if (cfg->verbose)
 		cout << OK << endl;
@@ -124,6 +144,11 @@ void Frequency_response::derivative_filter(double p1, int width)
 		}
 	}
 
+	mask[0] = 0.0;
+	mask[session_info.get_CHANELS()-1] = 0.0;
+
+	throw_if_mask_is_null();
+
 	if (cfg->verbose)
 		cout << OK << endl;
 }
@@ -146,6 +171,8 @@ void Frequency_response::median_filter(double p2)
 			mask[i] = 0.0;
 		}
 	}
+
+	throw_if_mask_is_null();
 
 	if (cfg->verbose)
 		cout << OK << endl;
@@ -192,7 +219,11 @@ void Frequency_response::median_filter(double p2, int width)
 
 		i++;
 	}
+
+	throw_if_mask_is_null();
 }
+
+
 void Frequency_response::print(string file_name)
 {
 	int chanels = session_info.get_CHANELS();

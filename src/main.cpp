@@ -102,21 +102,53 @@ int main (int argc, char *argv[])
 
 				fr = new Frequency_response (*raw);
 
-				if (cfg->do_filtration)
+				try
 				{
-					if (cfg->is_deriv_width)
-						fr->derivative_filter(cfg->deriv_threshold, cfg->deriv_width);
-					else 
-						fr->derivative_filter(cfg->deriv_threshold);
+					if (cfg->do_filtration)
+					{
+						if (cfg->is_deriv_width)
+							fr->derivative_filter(cfg->deriv_threshold, cfg->deriv_width);
+						else 
+							fr->derivative_filter(cfg->deriv_threshold);
 
-					if (cfg->is_median_width)
-						fr->median_filter(cfg->median_threshold, cfg->median_width);
-					else
-						fr->median_filter(cfg->median_threshold);
+						if (cfg->is_median_width)
+							fr->median_filter(cfg->median_threshold, cfg->median_width);
+						else
+							fr->median_filter(cfg->median_threshold);
+					}
+					if (cfg->get_fr)
+					{
+						fr->print(cfg->output_dir + file_name + ".fr");
+						fr->print_masked(cfg->output_dir + "masked_" + file_name + ".fr");
+					}
+				}
+				catch (const invalid_argument &err)
+				{
+					if (cfg->verbose)
+						cout << err.what() << endl;
+
+					error_list.push_back(err.what());
+					error_names.push_back(file_name);
+
+					delete raw;
+					delete fr;
+
+					raw = nullptr;
+					fr = nullptr;
+
+
+					continue;
 				}
 
 				int_prf = new Int_profile (*raw, fr->mask);
 				int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
+
+
+				delete raw;
+				delete fr;
+
+				raw = nullptr;
+				fr = nullptr;
 			}
 			else
 			{
@@ -124,7 +156,16 @@ int main (int argc, char *argv[])
 				continue;
 			}
 
+			cout << "SNR: " << int_prf->get_SNR() << endl;
+
+			if (int_prf->get_SNR() > 0.0)
 				profiles.push_back(*int_prf);
+			else
+			{
+				//cout << WARNING << "Low SNR. Skipping" << endl;
+				//error_list.push_back(string(WARNING) + "Low SNR. Skipping");
+				//error_names.push_back(file_name);
+			}
 		}
 
 		etalon_prf = new Etalon_profile(profiles);
@@ -132,6 +173,9 @@ int main (int argc, char *argv[])
 
 		cout << endl << "Template profile was made from " << profiles.size() << " integral profiles" << endl;
 		cout << "SNR: " << etalon_prf->get_SNR() << endl;
+
+		delete etalon_prf;
+		etalon_prf = nullptr;
 	}
 	else
 	{
@@ -197,23 +241,42 @@ int main (int argc, char *argv[])
 
 				fr = new Frequency_response (*raw);
 
-				if (cfg->do_filtration)
+				try
 				{
-					if (cfg->is_deriv_width)
-						fr->derivative_filter(cfg->deriv_threshold, cfg->deriv_width);
-					else 
-						fr->derivative_filter(cfg->deriv_threshold);
+					if (cfg->do_filtration)
+					{
+						if (cfg->is_deriv_width)
+							fr->derivative_filter(cfg->deriv_threshold, cfg->deriv_width);
+						else 
+							fr->derivative_filter(cfg->deriv_threshold);
 
-					if (cfg->is_median_width)
-						fr->median_filter(cfg->median_threshold, cfg->median_width);
-					else
-						fr->median_filter(cfg->median_threshold);
+						if (cfg->is_median_width)
+							fr->median_filter(cfg->median_threshold, cfg->median_width);
+						else
+							fr->median_filter(cfg->median_threshold);
+					}
+
+					if (cfg->get_fr)
+					{
+						fr->print(cfg->output_dir + file_name + ".fr");
+						fr->print_masked(cfg->output_dir + "masked_" + file_name + ".fr");
+					}
 				}
-
-				if (cfg->get_fr)
+				catch (const invalid_argument &err)
 				{
-					fr->print(cfg->output_dir + file_name + ".fr");
-					fr->print_masked(cfg->output_dir + "masked_" + file_name + ".fr");
+					if (cfg->verbose)
+						cout << err.what() << endl;
+
+					error_list.push_back(err.what());
+					error_names.push_back(file_name);
+
+					delete raw;
+					delete fr;
+
+					raw = nullptr;
+					fr = nullptr;
+
+					continue;
 				}
 
 				int_prf = new Int_profile (*raw, fr->mask);
@@ -243,8 +306,6 @@ int main (int argc, char *argv[])
 				cout << "SNR:  " << int_prf->get_SNR() << endl;
 				cout << "ERR:  " << toa_error*1e3 << " mcsec" << endl;
 			}
-
-			int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
 
 			delete int_prf;
 			int_prf = nullptr;

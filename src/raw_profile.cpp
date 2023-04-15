@@ -3,14 +3,7 @@
 #include"../lib/configuration.h"
 #include"../lib/massages.h"
 
-#include <ctime>
-
-#ifdef __AVX__
-  #include <immintrin.h>
-#else
-  #warning AVX is not available. Code will not compile!
-#endif
-
+#include<cmath>
 #include<string>
 #include<fstream>
 #include<iostream>
@@ -23,7 +16,6 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 {
 	if (cfg->verbose)
 		cout << "Making raw profile" << endl;
-
 	int total_pulses = session_info.get_TOTAL_PULSES();
 	int obs_window = session_info.get_OBS_WINDOW();
 	int chanels = session_info.get_CHANELS();
@@ -75,6 +67,38 @@ void Raw_profile::read_data(string file_name, byte32* data)
 	if (cfg->verbose)
 		cout  << OK << endl;
 }
+//
+//void Raw_profile::decode_data(byte32* data, double* signal)
+//{
+//	if (cfg->verbose)
+//		cout << SUB << "Decoding data...";
+//
+//#pragma omp parallel default(private) shared(data, signal) 
+//	{      
+//		double exp, spectr_t;
+//		double ratio = 0.2048/session_info.get_TAU();
+//
+//
+//#pragma omp for
+//		for (int i = 0; i < OBS_SIZE; i++)
+//		{
+//			spectr_t = double (data[i].as_int & 0xFFFFFF);
+//
+//			exp = double ( (data[i].as_int & 0x7F000000) >> 24 );
+//			exp -= 64.0;
+//
+//			exp = double(1llu << (unsigned long long) exp);
+//
+//			spectr_t = spectr_t*exp*ratio;
+//			spectr_t = spectr_t*1.3565771745707199e-14;
+//
+//			signal[i] = spectr_t;
+//		}
+//	}
+//
+//		if (cfg->verbose)
+//		cout << OK << endl;
+//}
 
 void Raw_profile::decode_data(byte32* data, double* signal)
 {
@@ -83,25 +107,33 @@ void Raw_profile::decode_data(byte32* data, double* signal)
 
 #pragma omp parallel default(private) shared(data, signal) 
 	{      
-		double exp, spectr_t;
+		unsigned long long exp;
+		double spectr_t, exp_1, exp_2;
 		double ratio = 0.2048/session_info.get_TAU();
 
+		unsigned long long max = 0, min = 999999;
 
 #pragma omp for
 		for (int i = 0; i < OBS_SIZE; i++)
 		{
 			spectr_t = double (data[i].as_int & 0xFFFFFF);
 
-			exp = double ( (data[i].as_int & 0x7F000000) >> 24 );
-			exp -= 64.0;
+			exp = (data[i].as_int & 0x7F000000) >> 24;
+			exp_1 = exp_2 = double(1llu << (exp/2llu));
+			exp_2 *= double(1llu << (exp%2llu));
 
-			exp = double(1llu << (unsigned long long) exp);
+			if (exp > max)
+				max = exp;
+			if (exp < min)
+				min = exp;
 
-			spectr_t = spectr_t*exp*ratio;
+
 			spectr_t = spectr_t*1.3565771745707199e-14;
+			spectr_t = spectr_t*ratio*exp_1*exp_2;
 
 			signal[i] = spectr_t;
 		}
+		cout << min << "  " << max << endl;
 	}
 
 		if (cfg->verbose)
@@ -122,7 +154,7 @@ void Raw_profile::split_data (double* signal)
 	{      
 
 #pragma omp for
-		for (int i = 0; i < chanels; i++)
+		for (int i = 0; i < 512; i++)
 			fill(mean_signal_per_chanel[i].begin(), mean_signal_per_chanel[i].end(), 0.0);
 
 		int chan_and_window = chanels*obs_window;

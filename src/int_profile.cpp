@@ -181,18 +181,22 @@ void Int_profile::move_chanel_profiles(Raw_profile* raw, std::vector<double>& ch
 
 		noise = median(raw->mean_signal_per_chanel[i]);
 
+		double bias;
+
 		for(int j = 0; j < obs_window; j++)
 		{
-			if ((double(j + delta_int) + delta_dec) > double(obs_window))
+			bias = double(j + delta_int) + delta_dec;
+
+			if (bias > double(obs_window))
 			{
-				if ((double(j + delta_int) + delta_dec)*tau < double(period))
+				if (bias*tau < double(period))
 				{
 					temp_1[j] = temp_2[j] = noise;
 
 					continue;
 				}
 
-				delay = chanel_delay[i] + obs_window*tau - period;
+				delay = chanel_delay[i] + floor(bias*tau/period)*(obs_window*tau - period);
 
 				delta_int = int(delay/tau);
 				delta_dec = delay - tau*double(delta_int);
