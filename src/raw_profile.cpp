@@ -133,7 +133,6 @@ void Raw_profile::decode_data(byte32* data, double* signal)
 
 			signal[i] = spectr_t;
 		}
-		cout << min << "  " << max << endl;
 	}
 
 		if (cfg->verbose)
@@ -160,12 +159,13 @@ void Raw_profile::split_data (double* signal)
 		int chan_and_window = chanels*obs_window;
 
 #pragma omp for 
-		for (int imp = 0; imp < total_pulses; imp ++)
+		for (int imp = 0; imp < total_pulses; ++imp)
 		{
-			for (int k = 0; k < obs_window; k ++)
+			for (int k = 0; k < obs_window; ++k)
 			{
-				for (int i = 0; i < chanels; i++)
+				for (int i = 0; i < chanels; ++i)
 				{
+					#pragma omp atomic
 					mean_signal_per_chanel[i][k] += signal[i + k*chanels + imp*chan_and_window];
 				}
 			}

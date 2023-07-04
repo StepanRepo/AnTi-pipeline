@@ -153,6 +153,10 @@ int main (int argc, char *argv[])
 			else
 			{
 				cout << WARNING << "Unknown file format: " << file_name << endl;
+
+				error_list.push_back("Unknown file format " + ext);
+				error_names.push_back(file_name);
+
 				continue;
 			}
 
@@ -291,6 +295,10 @@ int main (int argc, char *argv[])
 			else
 			{
 				cout << WARNING << "Unknown file format: " << file_name << endl;
+
+				error_list.push_back("Unknown file format " + ext);
+				error_names.push_back(file_name);
+
 				continue;
 			}
 
@@ -304,7 +312,7 @@ int main (int argc, char *argv[])
 				cout.precision(24);
 				cout << endl << "TOA:  " << toa <<  " MJD" << endl;
 				cout << "SNR:  " << int_prf->get_SNR() << endl;
-				cout << "ERR:  " << toa_error*1e3 << " mcsec" << endl;
+				cout << "ERR:  " << toa_error*1e3 << " usec" << endl;
 			}
 
 			delete int_prf;

@@ -463,6 +463,7 @@ double Int_profile::get_SNR()
 
 		double signal = mean(signal_vec);
 		double noise = mean(noise_vec);
+		
 
 		snr = signal/noise;
 
@@ -488,7 +489,7 @@ void Int_profile::read_freq_comp (string file_name)
 		{
 			try
 			{
-				freq_comp = stod(buffer.substr(buffer.find(' ') + 1));
+				freq_comp = stod(buffer.substr(buffer.find(' ') + 1)) * 1e-3;
 			}
 			catch (const invalid_argument &err)
 			{

@@ -5,6 +5,7 @@
 #include<iostream>
 #include<string>
 #include<vector>
+#include<algorithm>
 #include <sys/stat.h>
 
 
@@ -186,6 +187,8 @@ void Configuration::fill_config(string file_name)
 			int i = 0;
 			while (getline(cfg, line))
 			{
+
+				line.erase(remove_if(line.begin(), line.end(), ::isspace), line.end());
 				files.push_back(line);
 
 				i++;
