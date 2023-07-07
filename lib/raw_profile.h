@@ -9,7 +9,8 @@
 typedef union byte32
 {
 	char as_char[4];
-	int as_int;
+	int32_t as_int;
+	float as_float;
 } byte32;
 
 
@@ -27,9 +28,8 @@ class Raw_profile
     private:
         int OBS_SIZE;
 
-        void read_data (std::string file_name, byte32 *data);
-        void decode_data (byte32 *data, double* signal);
-        void split_data (double* signal);
+        void read_data (std::string file_name, float *data);
+        void split_data (float* signal);
 
 };
 

@@ -47,8 +47,9 @@ if __name__ == "__main__":
                 x[i] = np.float16(s[1])
 
             plt.figure()
+            plt.grid()
             plt.plot(t, x)
-            plt.text(0, 0, str(prf_file))
+            plt.text(0, 1, str(prf_file.name))
 
         #plt.show()
     save_image("profiles.pdf")

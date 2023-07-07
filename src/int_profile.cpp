@@ -174,6 +174,8 @@ void Int_profile::move_chanel_profiles(Raw_profile* raw, std::vector<double>& ch
 	temp_1.reserve(obs_window);
 	temp_2.reserve(obs_window);
 
+	double bias;
+
 	for (int i = 0; i < chanels; i++)
 	{
 		delta_int = int(chanel_delay[i]/tau);
@@ -181,9 +183,7 @@ void Int_profile::move_chanel_profiles(Raw_profile* raw, std::vector<double>& ch
 
 		noise = median(raw->mean_signal_per_chanel[i]);
 
-		double bias;
-
-		for(int j = 0; j < obs_window; j++)
+		for(int j = 0; j < obs_window; ++j)
 		{
 			bias = double(j + delta_int) + delta_dec;
 
@@ -206,7 +206,7 @@ void Int_profile::move_chanel_profiles(Raw_profile* raw, std::vector<double>& ch
 			temp_2[j] = raw->mean_signal_per_chanel[i][(j + delta_int + 1) % obs_window];
 		}
 
-		for(int j = 0; j < obs_window; j++)
+		for(int j = 0; j < obs_window; ++j)
 		{
 			compensated_signal_per_chanel[i][j] = (1.0 - delta_dec)*temp_1[j] + delta_dec*temp_2[j];
 		}

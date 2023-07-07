@@ -1,0 +1,36 @@
+g++ -Wall -Wextra -pedantic -fbounds-check -g -O2  -c src/raw_profile.cpp -o .o/raw_profile.o
+echo .o/configuration.o .o/custom_math.o .o/custom_time.o .o/etalon_profile.o .o/frequency_response.o .o/int_profile.o .o/main.o .o/raw_profile.o .o/session_info.o
+.o/configuration.o .o/custom_math.o .o/custom_time.o .o/etalon_profile.o .o/frequency_response.o .o/int_profile.o .o/main.o .o/raw_profile.o .o/session_info.o
+g++ -Wall -Wextra -pedantic -fbounds-check -g -O2  -c src/int_profile.cpp -o .o/int_profile.o
+g++ -Wall -Wextra -pedantic -fbounds-check -g -O2  -c src/etalon_profile.cpp -o .o/etalon_profile.o
+g++ -Wall -Wextra -pedantic -fbounds-check -g -O2  -c src/frequency_response.cpp -o .o/frequency_response.o
+g++ -Wall -Wextra -pedantic -fbounds-check -g -O2  lib/massages.h .o/configuration.o .o/custom_math.o .o/custom_time.o .o/etalon_profile.o .o/frequency_response.o .o/int_profile.o .o/main.o .o/raw_profile.o .o/session_info.o -o main
+clear
+[H[2J[3Jtime ./main
+TOA calculating mode
+Reading template profile
+
+[;1mProcessing of file: 170416_0329+54_00[0m
+Reading session information
+Making raw profile
+	|__ Reading data...[200D[32;1m [Ok] [0m
+	|__ Decoding data...[200D[32;1m [Ok] [0m
+	|__ Splitting data...[200D[32;1m [Ok] [0m
+Making frequency response
+	|__ Calculating profile of frequency response...[200D[32;1m [Ok] [0m
+	|__ Derivative filter...[200D[32;1m [Ok] [0m
+	|__ Median filter...[200D[32;1m [Ok] [0m
+Making integral profile
+	|__ Calculating chanel delay...[200D[32;1m [Ok] [0m
+	|__ Moving chanel profiles...[200D[32;1m [Ok] [0m
+	|__ Averaging chanel profiles whith mask...[200D[32;1m [Ok] [0m
+	|__ Normilizing integral profile...[200D[32;1m [Ok] [0m
+	|__ Scaling of template profile...[200D[32;1m [Ok] [0m
+	|__ Calculating TOA...[200D[32;1m [Ok] [0m
+	|__ Calculating TOA error...[200D[32;1m [Ok] [0m
+
+TOA:  57495.4676813594071482783 MJD
+SNR:  22.650633108376407420792
+ERR:  113.925292403668620977442 usec
+
+TOA was calculated for 1 integral profiles

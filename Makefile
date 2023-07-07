@@ -3,7 +3,7 @@ SHELL := /bin/bash
 
 errors = -Wall -Wextra -pedantic
 mem = -fbounds-check -g
-opt = -O2 # -fopenmp
+opt = -O2 #-fopenmp
 
 
 msg = lib/massages.h
