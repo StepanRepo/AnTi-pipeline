@@ -9,7 +9,8 @@
 typedef union byte32
 {
 	char as_char[4];
-	int as_int;
+	int32_t as_int;
+	float as_float;
 } byte32;
 
 

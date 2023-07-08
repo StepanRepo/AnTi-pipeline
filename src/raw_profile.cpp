@@ -20,7 +20,7 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 	int obs_window = session_info.get_OBS_WINDOW();
 	int chanels = session_info.get_CHANELS();
 
-	OBS_SIZE = total_pulses*obs_window*chanels;
+	OBS_SIZE = total_pulses * obs_window * chanels;
 
 	byte32* data;
 	data = new byte32 [OBS_SIZE];
@@ -28,7 +28,16 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 	read_data(file_name, data);
 
 	double* signal;
-	signal = new double[OBS_SIZE];
+
+	if (session_info.get_SUMCHAN())
+	{
+		signal = new double[chanels * obs_window];
+		session_info.set_TOTAL_PULSES(1);
+	}
+	else
+	{
+		signal = new double[OBS_SIZE];
+	}
 
 	decode_data(data, signal);
 
@@ -67,77 +76,60 @@ void Raw_profile::read_data(string file_name, byte32* data)
 	if (cfg->verbose)
 		cout  << OK << endl;
 }
-//
-//void Raw_profile::decode_data(byte32* data, double* signal)
-//{
-//	if (cfg->verbose)
-//		cout << SUB << "Decoding data...";
-//
-//#pragma omp parallel default(private) shared(data, signal) 
-//	{      
-//		double exp, spectr_t;
-//		double ratio = 0.2048/session_info.get_TAU();
-//
-//
-//#pragma omp for
-//		for (int i = 0; i < OBS_SIZE; i++)
-//		{
-//			spectr_t = double (data[i].as_int & 0xFFFFFF);
-//
-//			exp = double ( (data[i].as_int & 0x7F000000) >> 24 );
-//			exp -= 64.0;
-//
-//			exp = double(1llu << (unsigned long long) exp);
-//
-//			spectr_t = spectr_t*exp*ratio;
-//			spectr_t = spectr_t*1.3565771745707199e-14;
-//
-//			signal[i] = spectr_t;
-//		}
-//	}
-//
-//		if (cfg->verbose)
-//		cout << OK << endl;
-//}
-
 void Raw_profile::decode_data(byte32* data, double* signal)
 {
 	if (cfg->verbose)
 		cout << SUB << "Decoding data...";
 
-#pragma omp parallel default(private) shared(data, signal) 
-	{      
-		unsigned long long exp;
-		double spectr_t, exp_1, exp_2;
-		double ratio = 0.2048/session_info.get_TAU();
+	if (session_info.get_SUMCHAN())
+	{
+		int obs_window = session_info.get_OBS_WINDOW();
+		int chanels = session_info.get_CHANELS();
 
-		unsigned long long max = 0, min = 999999;
-
-#pragma omp for
-		for (int i = 0; i < OBS_SIZE; i++)
+		for (int i = 0; i < chanels*obs_window; ++i)
+			signal[i] = (double) data[i].as_float;
+	}
+	else
+	{
+		#pragma omp parallel default(private) shared(data, signal) 
 		{
-			spectr_t = double (data[i].as_int & 0xFFFFFF);
+			float spectr_t;
+			int32_t exp;
 
-			exp = (data[i].as_int & 0x7F000000) >> 24;
-			exp_1 = exp_2 = double(1llu << (exp/2llu));
-			exp_2 *= double(1llu << (exp%2llu));
+			double ratio = 0.2048/session_info.get_TAU();
 
-			if (exp > max)
-				max = exp;
-			if (exp < min)
-				min = exp;
+			vector<double> powers_of_two(200);
+
+			powers_of_two.at(100) = 1.0;
+
+			for (size_t i = 101; i < 200; ++i)
+				powers_of_two.at(i) = powers_of_two.at(i-1) * 2.0;
+			for (size_t i = 101; i > 0; --i)
+				powers_of_two.at(i-1) = powers_of_two.at(i) / 2.0;
 
 
-			spectr_t = spectr_t*1.3565771745707199e-14;
-			spectr_t = spectr_t*ratio*exp_1*exp_2;
+			#pragma omp for
+			for (int i = 0; i < OBS_SIZE; ++i)
+			{
+				spectr_t = (float) (data[i].as_int & 0xFFFFFF);
 
-			signal[i] = spectr_t;
+				exp = (data[i].as_int & 0x7F000000) >> 24;
+				exp = exp + 12;
+
+				spectr_t = spectr_t * powers_of_two.at(exp) * ratio;
+
+				signal[i] = spectr_t;
+			}
 		}
 	}
 
-		if (cfg->verbose)
+
+
+
+	if (cfg->verbose)
 		cout << OK << endl;
 }
+
 
 void Raw_profile::split_data (double* signal)
 {
@@ -149,25 +141,18 @@ void Raw_profile::split_data (double* signal)
 	int chanels = session_info.get_CHANELS();
 
 
-#pragma omp parallel default(private) shared(total_pulses, obs_window, chanels, signal, mean_signal_per_chanel)  
-	{      
+	for (int i = 0; i < 512; i++)
+		fill(mean_signal_per_chanel[i].begin(), mean_signal_per_chanel[i].end(), 0.0);
 
-#pragma omp for
-		for (int i = 0; i < 512; i++)
-			fill(mean_signal_per_chanel[i].begin(), mean_signal_per_chanel[i].end(), 0.0);
+	int chan_and_window = chanels*obs_window;
 
-		int chan_and_window = chanels*obs_window;
-
-#pragma omp for 
-		for (int imp = 0; imp < total_pulses; ++imp)
+	for (int imp = 0; imp < total_pulses; ++imp)
+	{
+		for (int k = 0; k < obs_window; ++k)
 		{
-			for (int k = 0; k < obs_window; ++k)
+			for (int i = 0; i < chanels; ++i)
 			{
-				for (int i = 0; i < chanels; ++i)
-				{
-					#pragma omp atomic
-					mean_signal_per_chanel[i][k] += signal[i + k*chanels + imp*chan_and_window];
-				}
+				mean_signal_per_chanel[i][k] += signal[i + k*chanels + imp*chan_and_window];
 			}
 		}
 	}
