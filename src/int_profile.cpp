@@ -425,6 +425,8 @@ double Int_profile::get_ERROR()
 
 		toa_error = 0.3*double(k2-k1)*session_info.get_TAU()/get_SNR();	
 
+		if (toa_error > 1) toa_error = 0.999;
+
 		if (cfg->verbose)
 			cout << OK << endl;
 

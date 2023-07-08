@@ -37,6 +37,7 @@ public:
 	double get_FREQ_MAX();
 	int get_CHANELS();
 
+	void set_TOTAL_PULSES(int);
 	//void operator=(Session_info& right);
 
 private:

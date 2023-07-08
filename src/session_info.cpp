@@ -296,3 +296,7 @@ bool Session_info::get_SUMCHAN() {return sumchan;}
 double Session_info::get_FREQ_MIN() {return freq_min;}
 double Session_info::get_FREQ_MAX() {return freq_max;}
 int Session_info::get_CHANELS() {return chanels;}
+
+
+
+void Session_info::set_TOTAL_PULSES(int num) {total_pulses = num;}
