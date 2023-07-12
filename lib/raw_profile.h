@@ -22,14 +22,12 @@ class Raw_profile
         Session_info session_info{};
         vector<vector<double>> mean_signal_per_chanel;
 
-	double get_RAW_SIGNAL(int i);
-	void print_mean_channel(string file_name);
-
     private:
         int OBS_SIZE;
 
-        void read_data (std::string file_name, float *data);
-        void split_data (float* signal);
+        void read_data (std::string file_name, byte32 *data);
+	void decode_data(byte32* data, double* signal);
+        void split_data (double* signal);
 
 };
 

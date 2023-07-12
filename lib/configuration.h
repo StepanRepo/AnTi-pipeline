@@ -30,13 +30,12 @@ class Configuration
 
 		bool do_tpl;
 
-
-
 		bool is_verbose;
 
 		bool is_rawdata_dir;
 		bool is_output_dir;
 		bool is_tplfile;
+
 
 		bool is_do_filtration;
 

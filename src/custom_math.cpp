@@ -10,6 +10,147 @@
 
 using namespace std;
 
+
+int max_pos(vector<double>& vec)
+{
+	int pos = 0;
+	double value = vec.at(0);
+
+	size_t n = vec.size();
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		if (value < vec.at(i))
+		{
+			value = vec.at(i);
+			pos = (int) i;
+		}
+	}
+
+	return pos;
+}
+
+double max(vector<double>& vec)
+{
+	double value = vec.at(0);
+	size_t n = vec.size();
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		if (value < vec.at(i))
+		{
+			value = vec.at(i);
+		}
+	}
+
+	return value;
+}
+
+int min_pos(vector<double>& vec)
+{
+	int pos = 0;
+	double value = vec.at(0);
+
+	size_t n = vec.size();
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		if (value > vec.at(i))
+		{
+			value = vec.at(i);
+			pos = (int) i;
+		}
+	}
+
+	return pos;
+}
+
+double min(vector<double>& vec)
+{
+	double value = vec.at(0);
+	size_t n = vec.size();
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		if (value > vec.at(i))
+		{
+			value = vec.at(i);
+		}
+	}
+
+	return value;
+}
+
+int max_pos(vector<int>& vec)
+{
+	int pos = 0;
+	int value = vec.at(0);
+
+	size_t n = vec.size();
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		if (value < vec.at(i))
+		{
+			value = vec.at(i);
+			pos = (int) i;
+		}
+	}
+
+	return pos;
+}
+
+int max(vector<int>& vec)
+{
+	int value = vec.at(0);
+	size_t n = vec.size();
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		if (value < vec.at(i))
+		{
+			value = vec.at(i);
+		}
+	}
+
+	return value;
+}
+
+int min_pos(vector<int>& vec)
+{
+	int pos = 0;
+	int value = vec.at(0);
+
+	size_t n = vec.size();
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		if (value > vec.at(i))
+		{
+			value = vec.at(i);
+			pos = (int) i;
+		}
+	}
+
+	return pos;
+}
+
+int min(vector<int>& vec)
+{
+	int value = vec.at(0);
+	size_t n = vec.size();
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		if (value > vec.at(i))
+		{
+			value = vec.at(i);
+		}
+	}
+
+	return value;
+}
+
 double median (vector<double>& vec)
 {
 	double median;

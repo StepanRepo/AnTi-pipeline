@@ -28,6 +28,8 @@ Int_profile::Int_profile(Raw_profile& raw) : session_info()
 	vector<double> chanel_delay (channels);
 	compensated_signal_per_chanel = vector (channels, vector<double>(obs_window));
 
+	freq_comp = session_info.get_FREQ_MAX();
+
 	calculate_chanel_delay (chanel_delay);
 	move_chanel_profiles(&raw, chanel_delay);
 
@@ -46,7 +48,6 @@ Int_profile::Int_profile(Raw_profile& raw) : session_info()
 	snr = 0.0;
 	snr = get_SNR();
 
-	freq_comp = session_info.get_FREQ_MAX();
 }
 
 Int_profile::Int_profile(Raw_profile& raw, vector<double> mask) : session_info()
@@ -61,6 +62,8 @@ Int_profile::Int_profile(Raw_profile& raw, vector<double> mask) : session_info()
 
 	vector<double> chanel_delay (channels);
 	compensated_signal_per_chanel = vector (channels, vector<double>(obs_window));
+
+	freq_comp = session_info.get_FREQ_MAX();
 
 	calculate_chanel_delay (chanel_delay);
 	move_chanel_profiles(&raw, chanel_delay);
@@ -79,8 +82,6 @@ Int_profile::Int_profile(Raw_profile& raw, vector<double> mask) : session_info()
 
 	snr = 0.0;
 	snr = get_SNR();
-
-	freq_comp = session_info.get_FREQ_MAX();
 }
 
 
@@ -145,8 +146,8 @@ void Int_profile::calculate_chanel_delay(vector<double>& chanel_delay)
 
 	for (int i = 0; i < chanels; i++)
 	{
-		freq_current = freq_min + double(i+1)*df/512.0;
-		chanel_delay[i] = (1.0/(freq_current*freq_current) - 1.0/(freq_max*freq_max))*dm*1e7/2.41;
+		freq_current = freq_min + double(i)*df/512.0;
+		chanel_delay[i] = (1.0/(freq_current*freq_current) - 1.0/(freq_comp*freq_comp))*dm*1e7/2.41;
 	}
 	
 
@@ -328,9 +329,9 @@ double Int_profile::get_reper_point (Etalon_profile& etalon)
 
 	// print ccf vector to file
 	//ofstream out2 ("out/ccf");
-	//for (int i = -580; i < 570; i++)
+	//for (int i = 0; i < etalon_len+int_len; ++i)
 	//{
-	//	out2 << ccf[i+580] << endl;
+	//	out2 << ccf[i] << endl;
 	//}
 	//out2.close();
 

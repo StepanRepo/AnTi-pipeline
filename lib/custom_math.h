@@ -2,6 +2,18 @@
 
 using namespace std;
 
+int max_pos(vector<double>&);
+double max(vector<double>&);
+int min_pos(vector<double>&);
+double min(vector<double>&);
+
+int max_pos(vector<int>&);
+int max(vector<int>&);
+int min_pos(vector<int>&);
+int min(vector<int>&);
+
+
+
 double median (vector<double>&);
 double median (vector<double>&, int, int);
 

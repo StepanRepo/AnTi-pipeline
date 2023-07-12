@@ -44,7 +44,7 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 	mean_signal_per_chanel = vector (chanels, vector<double>(obs_window));
 
 	read_data(file_name, data);
-	split_data(data);
+	split_data(signal);
 
 	delete[] data;
 
@@ -52,7 +52,7 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 }
 
 
-void Raw_profile::read_data(string file_name, float* data)
+void Raw_profile::read_data(string file_name, byte32* data)
 {
 	if (cfg->verbose)
 		cout << SUB << "Reading data...";
@@ -144,11 +144,11 @@ void Raw_profile::split_data (double* signal)
 
 	int chan_and_window = chanels*obs_window;
 
-	for (int imp = 0; imp < total_pulses; ++imp)
+	for (size_t imp = 0; imp < total_pulses; ++imp)
 	{
-		for (int k = 0; k < obs_window; ++k)
+		for (size_t k = 0; k < obs_window; ++k)
 		{
-			for (int i = 0; i < chanels; ++i)
+			for (size_t i = 0; i < chanels; ++i)
 			{
 				mean_signal_per_chanel[i][k] += signal[i + k*chanels + imp*chan_and_window];
 			}
@@ -160,18 +160,3 @@ void Raw_profile::split_data (double* signal)
 		cout << OK << endl;
 }
 
-void Raw_profile::print_mean_channel(string file_name)
-{
-	ofstream out (file_name);
-
-	if (!out)
-		cout << WARNING << "Cann't print channel profiles: " << file_name << endl;
-	for (int i = 0; i < 570; i++)
-	{
-		for (int k = 0; k < 512; k++)
-			out << mean_signal_per_chanel[k][i] << " ";
-
-		out << endl;
-	}
-	out.close();
-}
