@@ -140,7 +140,7 @@ int main (int argc, char *argv[])
 					continue;
 				}
 
-				int_prf = new Int_profile (*raw, fr->mask);
+				int_prf = new Int_profile (*raw, &fr->mask);
 				int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
 
 
@@ -162,14 +162,7 @@ int main (int argc, char *argv[])
 
 			cout << "SNR: " << int_prf->get_SNR() << endl;
 
-			if (int_prf->get_SNR() > 0.0)
-				profiles.push_back(*int_prf);
-			else
-			{
-				//cout << WARNING << "Low SNR. Skipping" << endl;
-				//error_list.push_back(string(WARNING) + "Low SNR. Skipping");
-				//error_names.push_back(file_name);
-			}
+			profiles.push_back(*int_prf);
 		}
 
 		etalon_prf = new Etalon_profile(profiles);
@@ -283,7 +276,7 @@ int main (int argc, char *argv[])
 					continue;
 				}
 
-				int_prf = new Int_profile (*raw, fr->mask);
+				int_prf = new Int_profile (*raw, &fr->mask);
 				int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
 
 				delete raw;

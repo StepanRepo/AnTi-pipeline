@@ -11,14 +11,12 @@ class Int_profile
 {
     public:
 
-        Int_profile(Raw_profile& raw);
-        Int_profile(Raw_profile& raw, std::vector<double> mask);
+        Int_profile(Raw_profile& raw, std::vector<double>* mask = nullptr);
 	Int_profile(std::string file_name);
 
         Session_info session_info;
 
-        std::vector<double> profile;
-	std::vector<std::vector<double>> compensated_signal_per_chanel;
+	std::vector<std::vector<double>> profile;
 
 
 	long double get_TOA(Etalon_profile&);
@@ -34,11 +32,9 @@ class Int_profile
 
     private:
 
-        void calculate_chanel_delay (std::vector<double> & chanel_delay);
-        void move_chanel_profiles(Raw_profile* raw, std::vector<double>& chanel_delay);
-        void average_profiles();
-        void average_profiles(std::vector<double> mask);
+	void use_mask(vector<double> mask);
         void normilize_profile();
+
 
 	double freq_comp; 
 

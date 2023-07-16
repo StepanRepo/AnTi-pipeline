@@ -33,7 +33,7 @@ Frequency_response::Frequency_response(Int_profile& int_prf) : session_info()
 
 	session_info = int_prf.session_info;
 
-	fill_profile(int_prf.compensated_signal_per_chanel);
+	fill_profile(int_prf.profile);
 	fill_mask();
 }
 

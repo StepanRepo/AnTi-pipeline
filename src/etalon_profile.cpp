@@ -22,11 +22,13 @@ Etalon_profile::Etalon_profile(string file_name)
 	fill_profile(file_name);
 }
 
-Etalon_profile::Etalon_profile(vector<double> profile_ext, double tau_ext, int obs_window_ext)
+Etalon_profile::Etalon_profile(vector<vector<double>> profile_ext, double tau_ext, int obs_window_ext, int channels_ext)
 {
 	tau = tau_ext;
 	obs_window = obs_window_ext;
+	channels = channels_ext;
 
+	profile = vector (channels, vector<double>(obs_window));
 	profile = profile_ext;
 }
 
@@ -46,6 +48,9 @@ void Etalon_profile::read_header(string file_name)
 	getline(tpl_file, header_buffer);	
 		obs_window = stoi(header_buffer.substr(14));
 
+	getline(tpl_file, header_buffer);	
+		channels = stoi(header_buffer.substr(11));
+
 	tpl_file.close();
 }
 
@@ -56,16 +61,20 @@ void Etalon_profile::fill_profile(string file_name)
 	if (!tpl_file)
 		throw invalid_argument (string(ERROR) + "Cann't open file with template profile " + file_name);
 	
-	for (int i = 0; i < 2; i ++)
+	for (int i = 0; i < 3; i ++)
 		tpl_file.ignore(100, '\n');
 
-	profile.reserve(obs_window);
+	profile = vector (channels, vector<double>(obs_window));
 	double ampl;
 
-	for (int i = 0; i < obs_window; i++)
+	for (int i = 0; i < channels; i++)
 	{
-		tpl_file >> ampl;
-		profile.push_back(ampl);
+		for (int j = 0; j < obs_window; j++)
+		{
+			tpl_file >> ampl;
+
+			profile.at(i).at(j) = ampl;
+		}
 	}
 }
 
@@ -75,20 +84,7 @@ void Etalon_profile::normilize()
 	if (cfg->verbose)
 		cout << SUB << "Normilizing of template profile . . .";
 
-	double min = profile[0];
-	double max = 0;
-	double norm_factor;
-
-	for (int j = 0; j < obs_window; j++)
-	{
-		if (profile[j] < min) min = profile[j];
-		if (profile[j] > max) max = profile[j];
-	}
-
-	norm_factor = max - min;
-
-	for (int j = 0; j < obs_window; j++)
-		profile[j] = (profile[j] - min)/norm_factor;
+	normilize_vector(profile);
 
 	if (cfg->verbose)
 		cout << OK << endl;
@@ -106,21 +102,26 @@ Etalon_profile Etalon_profile::scale_profile(double tau_new)
 		if (cfg->verbose)
 			cout << OK << endl;
 
-		return Etalon_profile(profile, tau, obs_window);
+		return Etalon_profile(profile, tau, obs_window, channels);
 	}
 
 	double ratio = tau/tau_new;
 
 	int obs_window_new = (int) obs_window * ratio;
-	vector<double> profile_new = vector<double>(obs_window_new);
+	vector<vector<double>> profile_new = vector (channels, vector<double>(obs_window_new));
 
 	int n;
 
-	for (int k = 0; k < obs_window_new; k ++)
-	{
-		n = (int) k / ratio;
 
-		profile_new[k] = profile[n] + (profile[n+1] - profile[n]) * (double(k)*tau_new - double(n)*tau)/tau;
+	for (int i = 0; i < channels; ++i)
+	{
+		for (int k = 0; k < obs_window_new; ++k)
+		{
+			n = (int) k / ratio;
+
+			profile_new.at(i).at(k) = profile.at(i).at(n) + (profile.at(i).at(n+1) - profile.at(i).at(n))
+			       	* (double(k)*tau_new - double(n)*tau)/tau;
+		}
 	}
 
 	if (cfg->verbose)
@@ -133,7 +134,7 @@ Etalon_profile Etalon_profile::scale_profile(double tau_new)
 	//}
 	//out2.close();
 
-	return Etalon_profile(profile_new, tau_new, obs_window);
+	return Etalon_profile(profile_new, tau_new, obs_window, channels);
 
 }
 
@@ -144,57 +145,63 @@ Etalon_profile::Etalon_profile(vector<Int_profile>& profiles_series)
 
 	int n = profiles_series.size();
 
-	profile = profiles_series[0].profile;
-	tau = profiles_series[0].session_info.get_TAU();
-	obs_window = profiles_series[0].session_info.get_OBS_WINDOW();
+	profile = profiles_series.at(0).profile;
+	tau = profiles_series.at(0).session_info.get_TAU();
+	obs_window = profiles_series.at(0).session_info.get_OBS_WINDOW();
+	channels = profiles_series.at(0).session_info.get_CHANELS();
 
-	vector<double> current_int (obs_window);
+	vector<vector<double>> current_int (channels, vector<double>(obs_window));
 
 	vector<double> ccf (2*obs_window);
 
 	double reper_dec;
-	vector<double> near_max(5), coefficients(5), derivative (4);
+	vector<double> near_max(5), coefficients(5), derivative(4);
 
-	double max; 
-	int max_pos;
+	int c_channels, c_tau;
 
 	for (int i = 1; i < n; i++)
 	{
-		current_int = profiles_series[i].profile;
+		current_int = profiles_series.at(i).profile;
+
+		c_tau = profiles_series.at(i).session_info.get_TAU();
+		c_channels = profiles_series.at(i).session_info.get_CHANELS();
+
+		if (c_channels != channels)
+		{
+			cout << WARNING << "Number of frequency channels must be the same for all profiles. Profile will not use" << endl;
+			continue;
+		}
+		if (c_tau != tau)
+		{
+			cout << WARNING << "Tau of profiles must be the same for all profiles. Profile will not use" << endl;
+			continue;
+		}
 
 		// check the size of current vector
-		if ((int) current_int.size() > obs_window)
+		for (int c = 0; c < channels; ++c)
 		{
-			current_int.resize(obs_window);
-		}
-		else if ((int) current_int.size() < obs_window)
-		{
-			current_int.reserve(obs_window - current_int.size());
-
-			for (int i = current_int.size(); i < obs_window; i ++)
-			       current_int.push_back(0.0);	
+			current_int.at(c).resize(obs_window, 0.0);
 		}
 
 		// correlation of profiles
 		fill(ccf.begin(), ccf.end(), 0.0);
 
 		for (int j = 0; j < 2*obs_window; j++)
-			ccf[j] = cycle_discrete_ccf(current_int, profile, j - obs_window);
-		
-		max = 0.0;
-		max_pos = 0;
+			ccf.at(j) = cycle_discrete_ccf(current_int, profile, j - obs_window);
 
-		for (int j = 0; j < 2*obs_window; j++)
+		int max_pos_ = max_pos(ccf);
+		double max_ = max(ccf);
+
+
+		for (int j = -2; j < 3; ++j)
 		{
-			if (ccf[j] > max)
-			{
-				max = ccf[j];
-				max_pos = j;
-			}
+			if (j + max_pos_ < 0)
+				near_max.at(j+2) = ccf.at((max_pos_ + j) + (2*obs_window))/max_;
+			else if (j + max_pos_ > 2 * obs_window)
+				near_max.at(j+2) = ccf.at((max_pos_ + j) - (2*obs_window))/max_;
+			else
+				near_max.at(j+2) = ccf.at(max_pos_ + j)/max_;
 		}
-
-		for (int j = -2; j < 3; j++)
-			near_max[j+2] = ccf[max_pos + j]/max;
 
 		coefficients = interpolation4(near_max);
 
@@ -212,45 +219,24 @@ Etalon_profile::Etalon_profile(vector<Int_profile>& profiles_series)
 			continue;
 		}
 
-		move_continous(current_int, (double) max_pos + reper_dec);
+		move_continous(current_int, (double) max_pos_ + reper_dec);
 
-		for (int j = 0; j < obs_window; j++)
-			profile[j] += current_int[j];
-
+		for (int c = 0; c < channels; ++c)
+		{
+			for (int j = 0; j < obs_window; ++j)
+			{
+				profile.at(c).at(j) += current_int.at(i).at(j);
+			}
+		}
 	}	
+
 
 	normilize();
 }
 
 double Etalon_profile::get_SNR()
 {
-	double snr;
-
-	// find level of noise as
-	// 1.0% of maximum of signal
-
-	// max is equal 1.0
-	//for (int i = 0; i < obs_window; i++)
-	//	if (max < profile[i]) max = profile[i];
-
-	double max = 1e-1;
-
-	vector<double> noise_vec;
-	noise_vec.reserve(obs_window);
-
-	for (int i = 0; i < obs_window; i++)
-	{
-		if(profile[i] < max)
-		{
-			noise_vec.push_back(profile[i]);
-		}
-	}
-
-	double noise = sigma(noise_vec);
-
-	snr = 1.0/(noise);
-
-	return snr;
+	return SNR(profile);
 }
 
 
@@ -261,13 +247,22 @@ void Etalon_profile::print(string file_name)
 
 	out << "tau = " << tau << endl;
 	out << "numpointwin = " << obs_window << endl;
+	out << "channels = " << channels << endl;
 
 
-	for (int i = 0; i < obs_window; i++)
-		out << profile[i] << endl;	
+	for (int i = 0; i < channels; ++i)
+	{
+		for (int j = 0; j < obs_window; ++j)
+		{
+			out << profile.at(i).at(j) << " ";	
+		}
+
+		out << endl;
+	}
 
 	out.close();
 }
 
 double Etalon_profile::get_TAU(){return tau;}
 int Etalon_profile::get_OBS_WINDOW(){return obs_window;}
+int Etalon_profile::get_CHANELS(){return channels;}

@@ -151,6 +151,121 @@ int min(vector<int>& vec)
 	return value;
 }
 
+vector<int> max_pos(vector<vector<double>>& vec)
+{
+	double value = vec.at(0).at(0);
+
+	size_t n = vec.size();
+	size_t m = vec.at(0).size();
+
+	vector<int> max_pos(2);
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		for (size_t j = 0; j < m; ++j)
+		{
+			if (value < vec.at(i).at(j))
+			{
+				value = vec.at(i).at(j);
+				max_pos[0] = i;
+				max_pos[1] = j;
+			}
+		}
+	}
+
+	return max_pos;
+}
+
+double max (vector<vector<double>>& vec)
+{
+	double value = vec.at(0).at(0);
+
+	size_t n = vec.size();
+	size_t m = vec.at(0).size();
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		for (size_t j = 0; j < m; ++j)
+		{
+			if (value < vec.at(i).at(j))
+			{
+				value = vec.at(i).at(j);
+			}
+		}
+	}
+
+	return value;
+}
+
+vector<int> min_pos(vector<vector<double>>& vec)
+{
+	double value = vec.at(0).at(0);
+
+	size_t n = vec.size();
+	size_t m = vec.at(0).size();
+
+	vector<int> min_pos(2);
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		for (size_t j = 0; j < m; ++j)
+		{
+			if (value > vec.at(i).at(j))
+			{
+				value = vec.at(i).at(j);
+				min_pos[0] = i;
+				min_pos[1] = j;
+			}
+		}
+	}
+
+	return min_pos;
+}
+
+double min (vector<vector<double>>& vec)
+{
+	double value = vec.at(0).at(0);
+
+	size_t n = vec.size();
+	size_t m = vec.at(0).size();
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		for (size_t j = 0; j < m; ++j)
+		{
+			if (value > vec.at(i).at(j))
+			{
+				value = vec.at(i).at(j);
+			}
+		}
+	}
+
+	return value;
+}
+
+void normilize_vector (vector<vector<double>>& vec)
+{
+	double min_ = min(vec);
+	double max_ = max(vec);
+	double norm_factor = max_ - min_;
+
+	size_t n = vec.size();
+	size_t m = vec.at(0).size();
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		for (size_t j = 0; j < m; ++j)
+		{
+			vec.at(i).at(j) = (vec.at(i).at(j) - min_)/norm_factor;
+		}
+	}
+}
+
+
+
+
+
+
 double median (vector<double>& vec)
 {
 	double median;
@@ -162,6 +277,32 @@ double median (vector<double>& vec)
 		median = a[(a.capacity() - 1)/2];
 	else
 		median = a[a.capacity()/2] + a[a.capacity()/2 - 1];
+
+	return median;
+}
+
+double median (vector<vector<double>>& vec)
+{
+	size_t n = vec.size();
+	size_t m = vec.at(0).size();
+
+	double median;
+	vector<double> a (n*m);
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		for (size_t j = 0; j < m; ++j)
+		{
+			a.at(j + n*i) = vec.at(i).at(j);
+		}
+	}
+
+	sort(a.begin(), a.end());
+
+	if ((a.size() / 2) != 0)
+		median = a.at((n*m - 1)/2);
+	else
+		median = a.at(n*m/2) + a.at(n*m/2 - 1);
 
 	return median;
 }
@@ -186,6 +327,24 @@ double mean (vector<double>& vec)
 		mean += a[i];
 
 	return mean/double(a.size());
+}
+
+double mean (vector<vector<double>>& vec)
+{
+	size_t n = vec.size();
+	size_t m = vec.at(0).size();
+
+	double mean = 0.0;
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		for (size_t j = 0; j < m; ++j)
+		{
+			mean += vec.at(i).at(j);
+		}
+	}
+
+	return mean/double(n)/double(m);
 }
 
 double mean (vector<double>& vec, int begin, int end)
@@ -216,6 +375,27 @@ double sigma(vector<double>& vec)
 	return deviation;
 }
 
+double sigma(vector<vector<double>>& vec)
+{
+	size_t n = vec.size();
+	size_t m = vec.at(0).size();
+
+	double deviation = 0.0;
+	double mean_ = mean(vec);
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		for (size_t j = 0; j < m; ++j)
+		{
+			deviation += (vec.at(i).at(j) - mean_) * (vec.at(i).at(j) - mean_);
+		}
+	}
+
+	deviation = sqrt(deviation/double(n-1)/double(m-1));
+
+	return deviation;
+}
+
 double sigma(vector<double>& vec, int begin, int end)
 {
 	if (begin < 0) begin = 0;
@@ -226,91 +406,155 @@ double sigma(vector<double>& vec, int begin, int end)
 	return sigma(a);
 }
 
-
-
-double cycle_discrete_ccf (vector<double>& first, vector<double>& second, int delta)
+double sum (vector<double>& vec)
 {
+	size_t n = vec.size();
+	double sum = 0.0;
+
+	for (size_t i = 0; i < n; ++i)
+		sum += vec.at(i);
+
+	return sum;
+}
+
+
+
+double cycle_discrete_ccf (vector<double>& first, vector<double>& second_in, int delta)
+{
+	vector<double> second = second_in;
+
 	int size_f = first.capacity();
 	int size_s = second.capacity();
 
 	if (size_f > size_s)
-	{
-		for (int i = 0; i < size_f - size_s; ++i)
-			second.push_back(0.0);
-	}
+		second.resize(size_f, 0.0);
 
 	double sum = 0.0;
 
 	if (delta >= 0)
 	{
 		for (int i = 0; i < size_f; i++)
-			sum += first[(i + delta)%size_f] * second[i]; 
+			sum += first.at((i + delta) % size_f) * second.at(i); 
 	}else
 	{
 		for (int i = 0; i < size_f; i++)
-			sum += first[i] * second[(i - delta)%size_s]; 
+			sum += first.at(i) * second.at((i - delta) % size_s); 
 	}
 
-	return sum;
+	return sum/double(size_f);
 }
 
-
-double discrete_ccf (vector<double>& first_in, vector<double>& second, int delta)
+double cycle_discrete_ccf (vector<vector<double>>& first, vector<vector<double>>& second, int delta)
 {
-	int size_f = first_in.capacity();
-	int size_s = second.capacity();
 
-	double sum = 0;
-	int end;
+	size_t n1 = first.size();
+	size_t n2 = second.size();
 
-	if (delta > size_f || delta < -size_s)
-		return 0.0;
+	if (n1 != n2)
+		throw "Vectors must have same first dimention for cross-correlation";
 
+	double sum = 0.0;
 
-	int max_pos = 0;
-	double max = 0;
+	for (size_t i = 0; i < n1; ++i)
+		sum += cycle_discrete_ccf(first.at(i), second.at(i), delta);
 
-	for (int i = 0; i < size_f; ++i)
+	return sum/double(n1);
+}
+
+vector<double> discrete_ccf (vector<double>& first, vector<double>& second_in)
+{
+	size_t size_f = first.size();
+	size_t size_s = second_in.size();
+
+	// zero paddiong of second vector
+	vector<double> second (2*size_f + size_s);
+
+	for (size_t j = size_f; j < size_f + size_s; ++j)
+		second.at(j) = second_in.at(j - size_f);
+
+	vector<double> corr (2*size_f - 1);
+	
+	for (size_t j = 0; j < 2*size_f - 1; ++j)
 	{
-		if (first_in[i] > max)
+		for (size_t i = 0; i < size_f; ++i)
 		{
-			max = first_in[i];
-			max_pos = i;
+			corr.at(j) += first.at(i) * second.at(size_f+size_s - j + i);
 		}
 	}
 
-	vector<double> first = first_in;
+	return corr;
+}
 
-	int bias = max_pos - size_f/2;
+vector<double> discrete_ccf (vector<vector<double>>& first, vector<vector<double>>& second)
+{
+	size_t c = first.size();
+	size_t n = first.at(0).size();
 
-	move_continous(first, bias);
+	if (c != second.size())
+		throw "Vectors must have same first dimention for cross-correlation";
 
-	delta -= (double) bias;
 
-	if (delta >= 0)
+
+
+	vector<vector<double>> ccf;
+	ccf = vector(c, vector<double>(2*n - 1));
+
+#pragma omp parallel for
+		for (size_t i = 0; i < c; ++i)
+			ccf.at(i) = discrete_ccf(first.at(i), second.at(i));
+
+
+	vector<double> v_sum (2*n - 1);
+	vector<double> h_sum (c);
+
+	for (size_t j = 0; j < 2*n - 1; ++j)
 	{
-		// filnd end btw ends of first and second vectors
-		end = size_f - delta;
-		if (end > size_s) end = size_s;
+		for (size_t i = 0; i < c; ++i)
+			v_sum.at(j) += ccf.at(i).at(j);
 
-		for (int i = 0; i < end; i++)
-			sum += first[i + delta] * second[i]; 
-	}else
-	{
-		// filnd end btw ends of first and second vectors
-		end = size_s + delta;
-		if (end > size_f) end = size_f;
-
-		for (int i = 0; i < end; i++)
-			sum += first[i] * second[i - delta]; 
+		v_sum.at(j) /= (double) c;
 	}
 
-	sum /= double(end);
+	for (size_t i = 0; i < c; ++i)
+		h_sum.at(i) = sum(ccf.at(i));
+
+	double treshold = (1 - 1e-8) * sum(v_sum);
+
+	for (size_t i = 0; i < c; ++i)
+	{
+		if (h_sum.at(i) < treshold)
+		{
+			ccf.erase(ccf.begin() + i);
+			h_sum.erase(h_sum.begin() + i);
+			--i;
+			--c;
+		}
+	}
+
+	ofstream out("123");
+
+	for (size_t i = 0; i < c; ++i)
+	{
+		for (size_t j = 0; j < 2*n - 1; ++j)
+		{
+			out << ccf.at(i).at(j) << "  ";
+		}
+		out << endl;
+	}
 
 
 
-	return sum;
+	for (size_t j = 0; j < 2*n - 1; ++j)
+	{
+		for (size_t i = 0; i < c; ++i)
+			v_sum.at(j) += ccf.at(i).at(j);
+
+		v_sum.at(j) /= (double) c;
+	}
+
+	return v_sum;
 }
+
 
 vector<double> interpolation4 (vector<double> f)
 {
@@ -379,12 +623,81 @@ void move_continous(vector<double>& vec, double bias)
 	vector<double> temp_1 (n), temp_2(n);
 
 
-	for (int j = 0; j < n; j ++)
+	for (int j = 0; j < n; ++j)
 	{
 		temp_1[j] = vec[(j + delta_int) % n];
 		temp_2[j] = vec[(j + delta_int + 1) % n];
 	}
 
-	for(int j = 0; j < n; j++)
+	for(int j = 0; j < n; ++j)
 		vec[j] = (1.0 - delta_dec)*temp_1[j] + delta_dec*temp_2[j];
+}
+
+void move_continous(vector<vector<double>>& vec, double bias)
+{
+	size_t n = vec.size();
+
+	for (size_t i = 0; i < n; ++i)
+		move_continous(vec.at(i), bias);
+}
+
+
+double SNR(vector<double>& vec)
+{
+		int obs_window = vec.size();
+
+		double noise_threshold = 2.0 * median(vec);
+
+		vector<double> noise_vec, signal_vec;
+		noise_vec.reserve(obs_window);
+		signal_vec.reserve(obs_window);
+
+		for (int i = 0; i < obs_window; ++i)
+		{
+			if(vec.at(i) < noise_threshold)
+				noise_vec.push_back(vec.at(i) * vec.at(i));
+			else
+				signal_vec.push_back(vec.at(i) * vec.at(i));
+		}
+
+
+		double signal = mean(signal_vec);
+		double noise = mean(noise_vec);
+		
+
+		double snr = signal/noise;
+
+		return sqrt(snr);
+}
+
+double SNR(vector<vector<double>>& vec)
+{
+		int channels = vec.size();
+		int obs_window = vec.at(0).size();
+
+		double noise_threshold = 2.0 * median(vec);
+
+		vector<double> noise_vec, signal_vec;
+		noise_vec.reserve(obs_window);
+		signal_vec.reserve(obs_window);
+
+		for (int i = 0; i < channels; ++i)
+		{
+			for (int j = 0; j < obs_window; ++j)
+			{
+				if(vec.at(i).at(j) < noise_threshold)
+					noise_vec.push_back(vec.at(i).at(j) * vec.at(i).at(j));
+				else
+					signal_vec.push_back(vec.at(i).at(j) * vec.at(i).at(j));
+			}
+		}
+
+
+		double signal = mean(signal_vec);
+		double noise = mean(noise_vec);
+		
+
+		double snr = signal/noise;
+
+		return sqrt(snr);
 }

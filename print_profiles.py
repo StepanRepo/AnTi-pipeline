@@ -37,19 +37,43 @@ if __name__ == "__main__":
             data = prf.readlines()
             data = data[numpar-1:]
 
-            t = np.empty(len(data))
-            x = np.empty(len(data))
+            channels = len(data)
+            obs_window = len(data[0].split())
+
+            x = np.empty(shape = (channels, obs_window))
 
             for i, line in enumerate(data):
                 s = line.split()
 
-                t[i] = np.float64(s[0])
-                x[i] = np.float16(s[1])
+                for j, num in enumerate(s):
+                    x[i][j] = np.float16(num)
 
             plt.figure()
-            plt.grid()
-            plt.plot(t, x)
-            plt.text(0, 1, str(prf_file.name))
+            plt.imshow(x, interpolation = "none", origin = "lower")
 
+            plt.xlabel("Time")
+            plt.ylabel("Frequency channel")
+            plt.title(str(prf_file.name))
+
+    with open("123") as prf:
+
+        data = prf.readlines()
+
+        channels = len(data)
+        obs_window = len(data[0].split())
+
+        x = np.empty(shape = (channels, obs_window))
+
+        for i, line in enumerate(data):
+            s = line.split()
+
+            for j, num in enumerate(s):
+                x[i][j] = np.float16(num)
+
+        plt.figure()
+        plt.imshow(x, interpolation = "none", origin = "lower")
+
+        plt.xlabel("Time")
+        plt.ylabel("Frequency channel")
         #plt.show()
     save_image("profiles.pdf")
