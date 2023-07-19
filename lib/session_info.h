@@ -22,6 +22,8 @@ public:
 	int get_NUM_PARAMS();
 
 	string get_PSR_NAME();
+	string get_FILE_NAME();
+
 	long double get_PSR_PERIOD();
 	double get_DM();
 
@@ -38,12 +40,12 @@ public:
 	int get_CHANELS();
 
 	void set_TOTAL_PULSES(int);
-	//void operator=(Session_info& right);
 
 private:
 	int number_params;
 
 	string psr_name;
+	string file_name;
 	long double psr_period;
 	double dm;
 

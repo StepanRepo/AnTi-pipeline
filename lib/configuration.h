@@ -20,6 +20,10 @@ class Configuration
 
 		bool do_filtration;
 		bool get_fr;
+		bool get_ccf;
+
+		double ccf_threshold;
+		int ccf_width;
 
 		double deriv_threshold, median_threshold;
 		int deriv_width, median_width;
@@ -45,6 +49,8 @@ class Configuration
 		bool is_median_width;
 
 		bool is_get_fr;
+		bool is_get_ccf;
+		bool is_ccf_threshold, is_ccf_width;
 
 		bool is_num_files;
 		bool is_files;

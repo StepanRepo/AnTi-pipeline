@@ -38,7 +38,6 @@ int main (int argc, char *argv[])
 
 	cfg->command_line(argc, argv);
 
-
 	Raw_profile *raw;
 	Frequency_response *fr;
 	Etalon_profile *etalon_prf;

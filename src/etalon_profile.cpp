@@ -28,7 +28,6 @@ Etalon_profile::Etalon_profile(vector<vector<double>> profile_ext, double tau_ex
 	obs_window = obs_window_ext;
 	channels = channels_ext;
 
-	profile = vector (channels, vector<double>(obs_window));
 	profile = profile_ext;
 }
 
@@ -107,19 +106,20 @@ Etalon_profile Etalon_profile::scale_profile(double tau_new)
 
 	double ratio = tau/tau_new;
 
-	int obs_window_new = (int) obs_window * ratio;
+	int obs_window_new = (int) ((double)obs_window * ratio);
 	vector<vector<double>> profile_new = vector (channels, vector<double>(obs_window_new));
 
 	int n;
 
-
+	
 	for (int i = 0; i < channels; ++i)
 	{
 		for (int k = 0; k < obs_window_new; ++k)
 		{
-			n = (int) k / ratio;
+			n = (int) ((double)k / ratio);
 
-			profile_new.at(i).at(k) = profile.at(i).at(n) + (profile.at(i).at(n+1) - profile.at(i).at(n))
+			profile_new.at(i).at(k) = profile.at(i).at(n) + 
+				(profile.at(i).at((n+1) % obs_window) - profile.at(i).at(n))
 			       	* (double(k)*tau_new - double(n)*tau)/tau;
 		}
 	}
@@ -149,15 +149,16 @@ Etalon_profile::Etalon_profile(vector<Int_profile>& profiles_series)
 	tau = profiles_series.at(0).session_info.get_TAU();
 	obs_window = profiles_series.at(0).session_info.get_OBS_WINDOW();
 	channels = profiles_series.at(0).session_info.get_CHANELS();
-
 	vector<vector<double>> current_int (channels, vector<double>(obs_window));
 
-	vector<double> ccf (2*obs_window);
+	vector<vector<double>> ccf (channels, vector<double>(2*obs_window - 1));
+	vector<double> mask(channels), maximums(2*obs_window - 1), v_sum(2*obs_window - 1);
 
 	double reper_dec;
 	vector<double> near_max(5), coefficients(5), derivative(4);
 
-	int c_channels, c_tau;
+	int c_channels;
+	double c_tau, c_period, c_max;
 
 	for (int i = 1; i < n; i++)
 	{
@@ -165,6 +166,7 @@ Etalon_profile::Etalon_profile(vector<Int_profile>& profiles_series)
 
 		c_tau = profiles_series.at(i).session_info.get_TAU();
 		c_channels = profiles_series.at(i).session_info.get_CHANELS();
+		c_period = profiles_series.at(i).session_info.get_PSR_PERIOD();
 
 		if (c_channels != channels)
 		{
@@ -183,24 +185,36 @@ Etalon_profile::Etalon_profile(vector<Int_profile>& profiles_series)
 			current_int.at(c).resize(obs_window, 0.0);
 		}
 
-		// correlation of profiles
-		fill(ccf.begin(), ccf.end(), 0.0);
 
-		for (int j = 0; j < 2*obs_window; j++)
-			ccf.at(j) = cycle_discrete_ccf(current_int, profile, j - obs_window);
+		if (cfg->get_ccf)
+			ccf = discrete_ccf(current_int, profile, mask, 
+					cfg->output_dir + profiles_series.at(i).session_info.get_FILE_NAME() + ".ccf");
+		else
+			ccf = discrete_ccf(current_int, profile, mask);
 
-		int max_pos_ = max_pos(ccf);
-		double max_ = max(ccf);
+		for (int j = 0; j < 2*obs_window - 1; ++j)
+		{
+			for (int k = 0; k < channels; ++k)
+				v_sum.at(j) += ccf.at(k).at(j);
+
+			v_sum.at(j) /= (double) channels;
+		}
+		 
+		c_max = max_pos(v_sum);
+
+
+		int max_pos_ = max_pos(v_sum);
+		double max_ = max(v_sum);
 
 
 		for (int j = -2; j < 3; ++j)
 		{
 			if (j + max_pos_ < 0)
-				near_max.at(j+2) = ccf.at((max_pos_ + j) + (2*obs_window))/max_;
+				near_max.at(j+2) = v_sum.at((max_pos_ + j) + (2*obs_window - 1))/max_;
 			else if (j + max_pos_ > 2 * obs_window)
-				near_max.at(j+2) = ccf.at((max_pos_ + j) - (2*obs_window))/max_;
+				near_max.at(j+2) = v_sum.at((max_pos_ + j) - (2*obs_window - 1))/max_;
 			else
-				near_max.at(j+2) = ccf.at(max_pos_ + j)/max_;
+				near_max.at(j+2) = v_sum.at(max_pos_ + j)/max_;
 		}
 
 		coefficients = interpolation4(near_max);
@@ -219,13 +233,30 @@ Etalon_profile::Etalon_profile(vector<Int_profile>& profiles_series)
 			continue;
 		}
 
-		move_continous(current_int, (double) max_pos_ + reper_dec);
+		c_max = max_pos_ + reper_dec;
+
+
+		for (int i = 0; i < channels; ++i)
+		{
+			maximums.at(i) = max_pos(ccf.at(i));
+
+			if (maximums.at(i) - c_max < -obs_window)
+				maximums.at(i) = c_max - c_period*1e3/tau; 
+			else
+				maximums.at(i) = c_max;
+
+		}
+
+		for (int i = 0; i < channels; ++i)
+		{
+			move_continous(current_int.at(i), maximums.at(i));
+		}
 
 		for (int c = 0; c < channels; ++c)
 		{
 			for (int j = 0; j < obs_window; ++j)
 			{
-				profile.at(c).at(j) += current_int.at(i).at(j);
+				profile.at(c).at(j) += current_int.at(c).at(j) * mask.at(c);
 			}
 		}
 	}	

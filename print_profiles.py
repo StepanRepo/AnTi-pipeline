@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import matplotlib.pyplot as plt
+from matplotlib import colors
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 
@@ -49,31 +50,38 @@ if __name__ == "__main__":
                     x[i][j] = np.float16(num)
 
             plt.figure()
-            plt.imshow(x, interpolation = "none", origin = "lower")
+            plt.imshow(x, interpolation = "none", origin = "lower", norm = colors.LogNorm())
 
             plt.xlabel("Time")
             plt.ylabel("Frequency channel")
             plt.title(str(prf_file.name))
+            plt.colorbar()
 
-    with open("123") as prf:
 
-        data = prf.readlines()
+    prf_list = list(wd.glob("*.tpl"))
 
-        channels = len(data)
-        obs_window = len(data[0].split())
+    for k, prf_file in enumerate(prf_list):
+        with open(str(prf_file)) as prf:
 
-        x = np.empty(shape = (channels, obs_window))
+            data = prf.readlines()
+            data = data[3:]
 
-        for i, line in enumerate(data):
-            s = line.split()
+            channels = len(data)
+            obs_window = len(data[0].split())
 
-            for j, num in enumerate(s):
-                x[i][j] = np.float16(num)
+            x = np.empty(shape = (channels, obs_window))
 
-        plt.figure()
-        plt.imshow(x, interpolation = "none", origin = "lower")
+            for i, line in enumerate(data):
+                s = line.split()
 
-        plt.xlabel("Time")
-        plt.ylabel("Frequency channel")
-        #plt.show()
+                for j, num in enumerate(s):
+                    x[i][j] = np.float16(num)
+
+            plt.figure()
+            plt.imshow(x, interpolation = "none", origin = "lower", norm = colors.LogNorm())
+
+            plt.xlabel("Time")
+            plt.ylabel("Frequency channel")
+            plt.title(str(prf_file.name))
+            plt.colorbar()
     save_image("profiles.pdf")

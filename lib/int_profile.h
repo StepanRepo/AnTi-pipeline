@@ -11,7 +11,7 @@ class Int_profile
 {
     public:
 
-        Int_profile(Raw_profile& raw, std::vector<double>* mask = nullptr);
+        Int_profile(Raw_profile& raw, vector<double>* mask = nullptr);
 	Int_profile(std::string file_name);
 
         Session_info session_info;

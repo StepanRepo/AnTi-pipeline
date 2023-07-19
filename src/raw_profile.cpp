@@ -47,8 +47,10 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 	split_data(signal);
 
 	delete[] data;
+	delete[] signal;
 
 	data = nullptr;
+	signal = nullptr;
 }
 
 

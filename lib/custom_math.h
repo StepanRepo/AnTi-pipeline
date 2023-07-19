@@ -1,4 +1,5 @@
-#include <vector>
+#include<vector>
+#include<string>
 
 using namespace std;
 
@@ -18,6 +19,7 @@ vector<int> min_pos(vector<vector<double>>&);
 double min(vector<vector<double>>&);
 
 
+void normilize_vector (vector<double>&);
 void normilize_vector (vector<vector<double>>&);
 
 // statictic characteristics of vectors
@@ -38,11 +40,11 @@ double sigma(vector<double>&, int, int);
 
 // correlation
 vector<double> discrete_ccf (vector<double>& first, vector<double>& second);
-vector<double> discrete_ccf (vector<vector<double>>& first, vector<vector<double>>& second);
+vector<double> discrete_ccf (vector<vector<double>>& first, vector<vector<double>>& second,
+	       	string filename = "");
 
-double cycle_discrete_ccf (vector<double>& first, vector<double>& second, int delta);
-double cycle_discrete_ccf (vector<vector<double>>& first, vector<vector<double>>& second, int delta);
-
+vector<vector<double>> discrete_ccf (vector<vector<double>>& first, vector<vector<double>>& second,
+	       	vector<double>& mask, string filename = "");
 
 
 double SNR(vector<double>&);

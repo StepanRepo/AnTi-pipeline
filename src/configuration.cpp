@@ -33,6 +33,12 @@ Configuration::Configuration(string file_name)
 			cout << WARNING << "Median filter width wasn't set. Defaul value will be used instead" << endl;
 		if (!is_get_fr)
 			cout << WARNING << "Get FR wasn't set. Defaul value will be used instead" << endl;
+		if (!is_get_ccf)
+			cout << WARNING << "Get CCF wasn't set. Defaul value will be used instead" << endl;
+		if (!is_ccf_threshold)
+			cout << WARNING << "CCF filter thresold wasn't set. Defaul value will be used instead" << endl;
+		if (!is_ccf_width)
+			cout << WARNING << "CCF filter width wasn't set. Defaul value will be used instead" << endl;
 		if (!is_num_files)
 			cout << WARNING << "Number of input files wasn't set. Defaul value will be used instead" << endl;
 		if (!is_do_tpl)
@@ -65,6 +71,9 @@ void Configuration::fill_config(string file_name)
 	is_deriv_width = false;
 	is_median_width = false;
 	is_get_fr = false;
+	is_get_ccf = false;
+	is_ccf_threshold = false;
+	is_ccf_width = false;
 	is_num_files = false;
 	is_files = false;
 	is_do_tpl = false;
@@ -80,6 +89,9 @@ void Configuration::fill_config(string file_name)
 	median_threshold = 1.5;
 	median_width = 1;
 	get_fr = true;
+	get_ccf = true;
+	ccf_threshold = 1e-2;
+	ccf_width = 0;
 	num_files = 0;
 	files = vector<string> (0);
 	do_tpl = false;
@@ -141,7 +153,7 @@ void Configuration::fill_config(string file_name)
 			deriv_width = my_stoi(value, line_num);
 
 			if (deriv_width == -1)
-				deriv_threshold = 2;
+				deriv_width = 2;
 			else
 				is_deriv_width = true;
 		}
@@ -150,7 +162,7 @@ void Configuration::fill_config(string file_name)
 			median_threshold = my_stod(value, line_num);
 
 			if (median_threshold == -1.0)
-				deriv_threshold = 1.5;
+				median_threshold = 1.5;
 			else
 				is_median_threshold = true;
 		}
@@ -166,6 +178,28 @@ void Configuration::fill_config(string file_name)
 		else if (name == "get_fr")
 		{
 			is_get_fr = fill_bool(get_fr, value, line_num);
+		}
+		else if (name == "get_ccf")
+		{
+			is_get_ccf = fill_bool(get_ccf, value, line_num);
+		}
+		else if (name == "ccf_threshold")
+		{
+			ccf_threshold = my_stod(value, line_num);
+
+			if (ccf_threshold == -1.0)
+				ccf_threshold = 1e-2;
+			else
+				is_ccf_threshold = true;
+		}
+		else if (name == "ccf_width")
+		{
+			ccf_width = my_stoi(value, line_num);
+
+			if (ccf_width == -1)
+				ccf_width = 1;
+			else
+				is_ccf_width = true;
 		}
 		else if (name == "do_tpl")
 		{
@@ -289,6 +323,29 @@ void Configuration::command_line(int argc, char** argv)
 		{
 			get_fr = true;
 			is_get_fr = true;
+		}
+		else if (name == "get_ccf")
+		{
+			get_ccf = true;
+			is_get_ccf = true;
+		}
+		else if (name == "ccf_threshold")
+		{
+			ccf_threshold = my_stod(value, i);
+
+			if (ccf_threshold == -1.0)
+				ccf_threshold = 1e-2;
+			else
+				is_ccf_threshold = true;
+		}
+		else if (name == "ccf_width")
+		{
+			ccf_width = my_stoi(value, i);
+
+			if (ccf_width == -1)
+				ccf_width = 1;
+			else
+				is_ccf_width = true;
 		}
 		else if (name == "do_tpl")
 		{

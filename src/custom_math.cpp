@@ -1,5 +1,6 @@
 #include"../lib/massages.h"
 #include"../lib/custom_math.h"
+#include"../lib/configuration.h"
 
 #include <vector>
 #include <algorithm>
@@ -10,6 +11,7 @@
 
 using namespace std;
 
+extern Configuration *cfg;
 
 int max_pos(vector<double>& vec)
 {
@@ -243,9 +245,22 @@ double min (vector<vector<double>>& vec)
 	return value;
 }
 
-void normilize_vector (vector<vector<double>>& vec)
+void normilize_vector (vector<double>& vec)
 {
 	double min_ = min(vec);
+	double max_ = max(vec);
+	double norm_factor = max_ - min_;
+
+	size_t n = vec.size();
+
+	for (size_t i = 0; i < n; ++i)
+	{
+			vec.at(i) = (vec.at(i) - min_)/norm_factor;
+	}
+}
+void normilize_vector (vector<vector<double>>& vec)
+{
+	double min_ = median(vec);
 	double max_ = max(vec);
 	double norm_factor = max_ - min_;
 
@@ -293,7 +308,7 @@ double median (vector<vector<double>>& vec)
 	{
 		for (size_t j = 0; j < m; ++j)
 		{
-			a.at(j + n*i) = vec.at(i).at(j);
+			a.at(j + m*i) = vec.at(i).at(j);
 		}
 	}
 
@@ -418,96 +433,57 @@ double sum (vector<double>& vec)
 }
 
 
-
-double cycle_discrete_ccf (vector<double>& first, vector<double>& second_in, int delta)
-{
-	vector<double> second = second_in;
-
-	int size_f = first.capacity();
-	int size_s = second.capacity();
-
-	if (size_f > size_s)
-		second.resize(size_f, 0.0);
-
-	double sum = 0.0;
-
-	if (delta >= 0)
-	{
-		for (int i = 0; i < size_f; i++)
-			sum += first.at((i + delta) % size_f) * second.at(i); 
-	}else
-	{
-		for (int i = 0; i < size_f; i++)
-			sum += first.at(i) * second.at((i - delta) % size_s); 
-	}
-
-	return sum/double(size_f);
-}
-
-double cycle_discrete_ccf (vector<vector<double>>& first, vector<vector<double>>& second, int delta)
-{
-
-	size_t n1 = first.size();
-	size_t n2 = second.size();
-
-	if (n1 != n2)
-		throw "Vectors must have same first dimention for cross-correlation";
-
-	double sum = 0.0;
-
-	for (size_t i = 0; i < n1; ++i)
-		sum += cycle_discrete_ccf(first.at(i), second.at(i), delta);
-
-	return sum/double(n1);
-}
-
 vector<double> discrete_ccf (vector<double>& first, vector<double>& second_in)
 {
 	size_t size_f = first.size();
 	size_t size_s = second_in.size();
 
 	// zero paddiong of second vector
-	vector<double> second (2*size_f + size_s);
+	vector<double> second (2*(size_f-1) + size_s);
 
 	for (size_t j = size_f; j < size_f + size_s; ++j)
 		second.at(j) = second_in.at(j - size_f);
 
-	vector<double> corr (2*size_f - 1);
+	vector<double> corr (size_f + size_s - 1);
 	
-	for (size_t j = 0; j < 2*size_f - 1; ++j)
+	for (size_t j = 0; j < size_f + size_s - 1; ++j)
 	{
 		for (size_t i = 0; i < size_f; ++i)
 		{
-			corr.at(j) += first.at(i) * second.at(size_f+size_s - j + i);
+			corr.at(j) += first.at(i) * second.at(size_f + size_s - j + i - 2);
 		}
+
+		if (j >= size_f)
+			corr.at(j) /= (double) (j)*1e-2;
+		else
+			corr.at(j) /= (double) (2*size_f - j)*1e-2;
 	}
 
 	return corr;
 }
 
-vector<double> discrete_ccf (vector<vector<double>>& first, vector<vector<double>>& second)
+vector<double> discrete_ccf (vector<vector<double>>& first, vector<vector<double>>& second, 
+		string filename)
 {
 	size_t c = first.size();
 	size_t n = first.at(0).size();
+	size_t m = second.at(0).size();
 
 	if (c != second.size())
 		throw "Vectors must have same first dimention for cross-correlation";
 
 
-
-
 	vector<vector<double>> ccf;
-	ccf = vector(c, vector<double>(2*n - 1));
+	ccf = vector(c, vector<double>(n + m - 1));
 
 #pragma omp parallel for
-		for (size_t i = 0; i < c; ++i)
-			ccf.at(i) = discrete_ccf(first.at(i), second.at(i));
+	for (size_t i = 0; i < c; ++i)
+		ccf.at(i) = discrete_ccf(first.at(i), second.at(i));
 
-
-	vector<double> v_sum (2*n - 1);
+	vector<double> v_sum (n + m - 1);
 	vector<double> h_sum (c);
 
-	for (size_t j = 0; j < 2*n - 1; ++j)
+	for (size_t j = 0; j < n + m - 1; ++j)
 	{
 		for (size_t i = 0; i < c; ++i)
 			v_sum.at(j) += ccf.at(i).at(j);
@@ -518,36 +494,48 @@ vector<double> discrete_ccf (vector<vector<double>>& first, vector<vector<double
 	for (size_t i = 0; i < c; ++i)
 		h_sum.at(i) = sum(ccf.at(i));
 
-	double treshold = (1 - 1e-8) * sum(v_sum);
+
+	vector<double> mask (c);
+	fill(mask.begin(), mask.end(), 1.0);
+
+	double treshold = (1 - cfg->ccf_threshold) * sum(v_sum);
+	size_t width = cfg->ccf_width;
+
 
 	for (size_t i = 0; i < c; ++i)
 	{
 		if (h_sum.at(i) < treshold)
 		{
-			ccf.erase(ccf.begin() + i);
-			h_sum.erase(h_sum.begin() + i);
-			--i;
-			--c;
+			if (i < width)
+				fill(mask.begin(), mask.begin() + i + width, 0.0);
+			else if (i > c - width)
+				fill(mask.begin() + i - width, mask.end(), 0.0);
+			else
+				fill(mask.begin() + i - width, mask.begin() + i + width, 0.0);
 		}
 	}
 
-	ofstream out("123");
 
-	for (size_t i = 0; i < c; ++i)
+	// print ccf to file if filename exists
+	if (filename != "")
 	{
-		for (size_t j = 0; j < 2*n - 1; ++j)
+		ofstream out(filename);
+		for (size_t i = 0; i < c; ++i)
 		{
-			out << ccf.at(i).at(j) << "  ";
+			for (size_t j = 0; j < n + m - 1; ++j)
+			{
+				out << ccf.at(i).at(j) * mask.at(i) << "  ";
+			}
+			out << endl;
 		}
-		out << endl;
+		out.close();
 	}
 
 
-
-	for (size_t j = 0; j < 2*n - 1; ++j)
+	for (size_t j = 0; j < n + m - 1; ++j)
 	{
 		for (size_t i = 0; i < c; ++i)
-			v_sum.at(j) += ccf.at(i).at(j);
+			v_sum.at(j) += ccf.at(i).at(j) * mask.at(i);
 
 		v_sum.at(j) /= (double) c;
 	}
@@ -555,6 +543,75 @@ vector<double> discrete_ccf (vector<vector<double>>& first, vector<vector<double
 	return v_sum;
 }
 
+
+
+vector<vector<double>> discrete_ccf (vector<vector<double>>& first, vector<vector<double>>& second, 
+		vector<double>& mask, string filename)
+{
+	size_t c = first.size();
+	size_t n = first.at(0).size();
+	size_t m = second.at(0).size();
+
+	if (c != second.size())
+		throw "Vectors must have same first dimention for cross-correlation";
+
+	fill(mask.begin(), mask.end(), 1.0);
+
+	vector<vector<double>> ccf;
+	ccf = vector(c, vector<double>(n + m - 1));
+
+#pragma omp parallel for
+	for (size_t i = 0; i < c; ++i)
+		ccf.at(i) = discrete_ccf(first.at(i), second.at(i));
+
+
+	vector<double> v_sum (n + m - 1);
+	vector<double> h_sum (c);
+
+	for (size_t j = 0; j < n + m - 1; ++j)
+	{
+		for (size_t i = 0; i < c; ++i)
+			v_sum.at(j) += ccf.at(i).at(j);
+
+		v_sum.at(j) /= (double) c;
+	}
+
+	for (size_t i = 0; i < c; ++i)
+		h_sum.at(i) = sum(ccf.at(i));
+
+	double treshold = (1 - cfg->ccf_threshold) * sum(v_sum);
+	size_t width = cfg->ccf_width;
+
+	for (size_t i = 0; i < c; ++i)
+	{
+		if (h_sum.at(i) < treshold)
+		{
+			if (i < width)
+				fill(mask.begin(), mask.begin() + i + width, 0.0);
+			else if (i > c - width)
+				fill(mask.begin() + i - width, mask.end(), 0.0);
+			else
+				fill(mask.begin() + i - width, mask.begin() + i + width, 0.0);
+		}
+	}
+
+	// print ccf to file if filename exists
+	if (filename != "")
+	{
+		ofstream out(filename);
+		for (size_t i = 0; i < c; ++i)
+		{
+			for (size_t j = 0; j < n + m - 1; ++j)
+			{
+				out << ccf.at(i).at(j) * mask.at(i) << "  ";
+			}
+			out << endl;
+		}
+		out.close();
+	}
+
+	return ccf;
+}
 
 vector<double> interpolation4 (vector<double> f)
 {
@@ -644,60 +701,10 @@ void move_continous(vector<vector<double>>& vec, double bias)
 
 double SNR(vector<double>& vec)
 {
-		int obs_window = vec.size();
-
-		double noise_threshold = 2.0 * median(vec);
-
-		vector<double> noise_vec, signal_vec;
-		noise_vec.reserve(obs_window);
-		signal_vec.reserve(obs_window);
-
-		for (int i = 0; i < obs_window; ++i)
-		{
-			if(vec.at(i) < noise_threshold)
-				noise_vec.push_back(vec.at(i) * vec.at(i));
-			else
-				signal_vec.push_back(vec.at(i) * vec.at(i));
-		}
-
-
-		double signal = mean(signal_vec);
-		double noise = mean(noise_vec);
-		
-
-		double snr = signal/noise;
-
-		return sqrt(snr);
+		return 0.0;
 }
 
 double SNR(vector<vector<double>>& vec)
 {
-		int channels = vec.size();
-		int obs_window = vec.at(0).size();
-
-		double noise_threshold = 2.0 * median(vec);
-
-		vector<double> noise_vec, signal_vec;
-		noise_vec.reserve(obs_window);
-		signal_vec.reserve(obs_window);
-
-		for (int i = 0; i < channels; ++i)
-		{
-			for (int j = 0; j < obs_window; ++j)
-			{
-				if(vec.at(i).at(j) < noise_threshold)
-					noise_vec.push_back(vec.at(i).at(j) * vec.at(i).at(j));
-				else
-					signal_vec.push_back(vec.at(i).at(j) * vec.at(i).at(j));
-			}
-		}
-
-
-		double signal = mean(signal_vec);
-		double noise = mean(noise_vec);
-		
-
-		double snr = signal/noise;
-
-		return sqrt(snr);
+		return 0.0;
 }

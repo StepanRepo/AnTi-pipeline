@@ -34,17 +34,19 @@ Session_info::Session_info() : start_date (0, 0, 0, 0, 0, 0l), start_utc (0, 0, 
 	chanels = 512;
 }
 
-Session_info::Session_info(string file_name, bool binary) : start_date (0, 0, 0, 0, 0, 0l), start_utc (0, 0, 0, 0, 0, 0l)
+Session_info::Session_info(string file_name_in, bool binary) : start_date (0, 0, 0, 0, 0, 0l), start_utc (0, 0, 0, 0, 0, 0l)
 {
 	if (cfg->verbose)
 		cout << "Reading session information" << endl;
 
+	file_name = file_name_in.substr(file_name_in.find_last_of("/") + 1);
+
 
 	ifstream obs_file;
 	if (binary)
-		obs_file.open(file_name, ios::in | ios::binary);
+		obs_file.open(file_name_in, ios::in | ios::binary);
 	else
-		obs_file.open(file_name, ios::in);
+		obs_file.open(file_name_in, ios::in);
 
 
 	if (!obs_file)
@@ -258,6 +260,7 @@ void str_split(string buffer, string& name, string& value)
 int Session_info::get_NUM_PARAMS() {return number_params;}
 
 string Session_info::get_PSR_NAME() {return psr_name;}
+string Session_info::get_FILE_NAME() {return file_name;}
 long double Session_info::get_PSR_PERIOD() {return psr_period;}
 double Session_info::get_DM() {return dm;}
 

@@ -23,7 +23,6 @@ Frequency_response::Frequency_response(Raw_profile& raw) : session_info()
 
 	fill_profile(raw.mean_signal_per_chanel);
 	fill_mask();
-
 }
 
 Frequency_response::Frequency_response(Int_profile& int_prf) : session_info()
@@ -52,7 +51,7 @@ void Frequency_response::fill_profile(vector<vector<double>> signal_per_chanel)
 
 	for (int i = 0; i < channels; i++)
 		for(int j = 0; j < obs_window; j++)
-			profile[i] += signal_per_chanel[i][j]; 
+			profile.at(i) += signal_per_chanel.at(i).at(j); 
 
 	if (cfg->verbose)
 		cout << OK << endl;
@@ -65,7 +64,6 @@ void Frequency_response::fill_mask()
 	mask = vector<double> (channels);
 
 	fill(mask.begin(), mask.end(), 1.0);
-
 }
 
 
