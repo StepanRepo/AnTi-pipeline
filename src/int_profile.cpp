@@ -93,7 +93,7 @@ Int_profile::Int_profile (string file_name) : session_info(file_name, false)
 void Int_profile::use_mask(vector<double> mask)
 {
 	if (cfg->verbose)
-		cout << SUB << "Averaging chanel profiles whith mask...";
+		cout << SUB << "Using channels mask...";
 
 	int chanels = session_info.get_CHANELS();
 	int obs_window = session_info.get_OBS_WINDOW();
@@ -231,7 +231,45 @@ double Int_profile::get_ERROR()
 		cout << SUB << "Calculating TOA error...";
 
 	if (toa_error == 0)
-		toa_error = .999;
+	{
+		int n = session_info.get_OBS_WINDOW();
+		int channels = session_info.get_CHANELS();
+
+		vector<double> c0 (channels), mass(channels), dc(channels);
+
+#pragma omp parallel for
+		for (int c = 0; c < channels; ++c)
+		{
+			for (int i = 0; i < n; ++i)
+			{
+				c0.at(c) += profile.at(c).at(i) * ((double) i);
+				mass.at(c) += profile.at(c).at(i);
+			}
+
+			c0.at(c) /= mass.at(c);
+		}
+
+		for (int c = 0; c < channels; ++c)
+		{
+
+			if (mass.at(c) == 0.0)
+			{
+				c0.erase(c0.begin() + c);
+				mass.erase(mass.begin() + c);
+				--c;
+				--channels;
+				continue;
+			}
+
+			for (int i = 0; i < n; ++i)
+				dc.at(c) += (i - c0.at(c)) * (i - c0.at(c));
+
+			dc.at(c) = sqrt(dc.at(c)) / mass.at(c);
+		}
+
+		toa_error = mean(dc)/get_SNR() * session_info.get_TAU()*1e-3;
+
+	}
 
 	if (cfg->verbose)
 		cout << OK << endl;

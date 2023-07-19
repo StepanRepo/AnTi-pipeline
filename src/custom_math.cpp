@@ -383,7 +383,7 @@ double sigma(vector<double>& vec)
 	double m = mean(a);
 
 	for (int i = 0; i < n; i++)
-		deviation += (a[i] - m)*(a[i] - m);
+		deviation += (a.at(i) - m)*(a.at(i) - m);
 
 	deviation = sqrt(deviation/double(n-1));
 
@@ -701,10 +701,39 @@ void move_continous(vector<vector<double>>& vec, double bias)
 
 double SNR(vector<double>& vec)
 {
-		return 0.0;
+	size_t n = vec.size();
+
+	vector<double> noise;
+	noise.reserve(n);
+
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		if (vec.at(i) < .1)
+		{
+			noise.push_back(vec.at(i));
+		}
+	}
+
+	return 1.0/sigma (noise);
 }
 
 double SNR(vector<vector<double>>& vec)
 {
-		return 0.0;
+	size_t n = vec.size();
+	size_t m = vec.at(0).size();
+
+	vector<double> noise;
+	noise.reserve(n*m);
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		for (size_t j = 0; j < m; ++j)
+		{
+			if (vec.at(i).at(j) < .1)
+				noise.push_back(vec.at(i).at(j));
+		}
+	}
+
+	return 1.0/sigma (noise);
 }
