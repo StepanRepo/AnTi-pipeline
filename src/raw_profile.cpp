@@ -2,6 +2,7 @@
 #include"../lib/session_info.h"
 #include"../lib/configuration.h"
 #include"../lib/massages.h"
+#include"../lib/custom_math.h"
 
 #include<cmath>
 #include<string>
@@ -20,23 +21,34 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 	int obs_window = session_info.get_OBS_WINDOW();
 	int chanels = session_info.get_CHANELS();
 
-	OBS_SIZE = total_pulses * obs_window * chanels;
-
 	byte32* data;
-	data = new byte32 [OBS_SIZE];
-
-	read_data(file_name, data);
-
 	double* signal;
 
-	if (session_info.get_SUMCHAN())
+	if (session_info.get_SUMCHAN() != "adc")
 	{
-		signal = new double[chanels * obs_window];
-		session_info.set_TOTAL_PULSES(1);
+		OBS_SIZE = total_pulses * obs_window * chanels;
+
+		data = new byte32 [OBS_SIZE];
+		read_data(file_name, data);
+
+		if (session_info.get_SUMCHAN() == "yes")
+		{
+			signal = new double[chanels * obs_window];
+			session_info.set_TOTAL_PULSES(1);
+		}
+		else
+		{
+			signal = new double[OBS_SIZE];
+		}
 	}
 	else
 	{
-		signal = new double[OBS_SIZE];
+		OBS_SIZE = session_info.get_PSR_PERIOD() * (total_pulses - 1) * 5000000/4;
+
+		data = new byte32 [OBS_SIZE];
+		read_data(file_name, data);
+
+		signal = new double[2*OBS_SIZE];
 	}
 
 	decode_data(data, signal);
@@ -69,8 +81,11 @@ void Raw_profile::read_data(string file_name, byte32* data)
 	for (int i = 0; i < session_info.get_NUM_PARAMS(); i++)
 		obs_file.ignore(40, '\n');
 
+	if (session_info.get_SUMCHAN() != "adc")
+		obs_file.read((char*) data, 4*OBS_SIZE);
+	else
+		obs_file.read((char*) data, 4*OBS_SIZE);
 
-	obs_file.read((char*) data, 4*OBS_SIZE);
 
 	obs_file.close();
 
@@ -82,7 +97,7 @@ void Raw_profile::decode_data(byte32* data, double* signal)
 	if (cfg->verbose)
 		cout << SUB << "Decoding data...";
 
-	if (session_info.get_SUMCHAN())
+	if (session_info.get_SUMCHAN() == "yes")
 	{
 		int obs_window = session_info.get_OBS_WINDOW();
 		int chanels = session_info.get_CHANELS();
@@ -90,7 +105,7 @@ void Raw_profile::decode_data(byte32* data, double* signal)
 		for (int i = 0; i < chanels*obs_window; ++i)
 			signal[i] = (double) data[i].as_float;
 	}
-	else
+	else if (session_info.get_SUMCHAN() == "no")
 	{
 		#pragma omp parallel default(private) shared(data, signal) 
 		{
@@ -123,6 +138,33 @@ void Raw_profile::decode_data(byte32* data, double* signal)
 			}
 		}
 	}
+	else if (session_info.get_SUMCHAN() == "adc")
+	{
+		int8_t* a;
+		a = new int8_t[4];
+
+		complex<double> time[1024], fourier[1024];
+		const char* error = NULL;
+
+		for (size_t pulse = 0; pulse < (size_t) OBS_SIZE/256ul; ++pulse)
+		{
+			for (size_t i = 0; i < 256; ++i)
+			{
+				a = (int8_t*) &data[i + pulse*256];
+
+				for(size_t j = 0; j < 4; ++j)
+					time[j + 4*i] = (double) a[j] + 0.0i;
+			}
+
+			simple_fft::IFFT(time, fourier, 1024, error);
+
+			for (size_t i = 0; i < 512; ++i)
+			{
+				signal[i + 512*pulse] = 
+					(fourier[i] * conj(fourier[i])).real() / 1048576.0;
+			}
+		}
+	}
 
 
 
@@ -139,24 +181,63 @@ void Raw_profile::split_data (double* signal)
 
 	size_t total_pulses = session_info.get_TOTAL_PULSES();
 	size_t obs_window = session_info.get_OBS_WINDOW();
-	size_t chanels = session_info.get_CHANELS();
+	size_t channels = session_info.get_CHANELS();
 
-	for (int i = 0; i < 512; i++)
+	for (size_t i = 0; i < channels; i++)
 		fill(mean_signal_per_chanel[i].begin(), mean_signal_per_chanel[i].end(), 0.0);
 
-	int chan_and_window = chanels*obs_window;
+	int chan_and_window = channels*obs_window;
 
-	for (size_t imp = 0; imp < total_pulses; ++imp)
+	if (session_info.get_SUMCHAN() != "adc")
 	{
-		for (size_t k = 0; k < obs_window; ++k)
+		for (size_t imp = 0; imp < total_pulses; ++imp)
 		{
-			for (size_t i = 0; i < chanels; ++i)
+			for (size_t k = 0; k < obs_window; ++k)
 			{
-				mean_signal_per_chanel[i][k] += signal[i + k*chanels + imp*chan_and_window];
+				for (size_t i = 0; i < channels; ++i)
+				{
+					mean_signal_per_chanel[i][k] +=
+					       	signal[i + k*channels + imp*chan_and_window];
+				}
+			}
+		}
+	}
+	else
+	{
+		size_t arg;
+		double dP = (double) obs_window - (double) session_info.get_PSR_PERIOD()*1e3 / session_info.get_TAU();
+
+		for (size_t imp = 0; imp < (size_t) total_pulses - 1; ++imp)
+		{
+			for (size_t k = 0; k < obs_window; ++k)
+			{
+				for (size_t i = 0; i < channels; ++i)
+				{
+					arg = i + (k + obs_window*imp + int (1.5*dP*imp))*512ul; //canonical
+
+					if (arg > (size_t) 2*OBS_SIZE)
+						cout << "bad news:  " << arg << "   " << 2*OBS_SIZE << endl;
+
+					mean_signal_per_chanel[i][k] += signal[arg];
+				}
 			}
 		}
 	}
 
+	//ofstream out("123");
+
+	//for (size_t imp = 0; imp < (size_t) total_pulses - 1; ++imp)
+	//{
+	//	for (size_t k = 0; k < obs_window; ++k)
+	//	{
+	//		size_t arg = 200 + (k + obs_window*imp)*512ul; //canonical
+
+
+	//		out << signal[arg] << endl;
+	//	}
+	//}
+
+	//out.close();
 
 	if (cfg->verbose)
 		cout << OK << endl;

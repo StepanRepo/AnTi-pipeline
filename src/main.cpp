@@ -139,8 +139,28 @@ int main (int argc, char *argv[])
 					continue;
 				}
 
-				int_prf = new Int_profile (*raw, &fr->mask);
-				int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
+				try
+				{
+					int_prf = new Int_profile (*raw, &fr->mask);
+					int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
+				}
+				catch (const invalid_argument &err)
+				{
+					if (cfg->verbose)
+						cout << err.what() << endl;
+
+					error_list.push_back(err.what());
+					error_names.push_back(file_name);
+
+					delete raw;
+					delete fr;
+
+					raw = nullptr;
+					fr = nullptr;
+
+
+					continue;
+				}
 
 
 				delete raw;
@@ -275,8 +295,30 @@ int main (int argc, char *argv[])
 					continue;
 				}
 
-				int_prf = new Int_profile (*raw, &fr->mask);
-				int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
+				try
+				{
+					int_prf = new Int_profile (*raw, &fr->mask);
+					int_prf->print(cfg->output_dir + cfg->files[i] + ".prf");
+				}
+				catch (const invalid_argument &err)
+				{
+					if (cfg->verbose)
+						cout << err.what() << endl;
+
+					error_list.push_back(err.what());
+					error_names.push_back(file_name);
+
+					delete raw;
+					delete fr;
+					delete int_prf;
+
+					raw = nullptr;
+					fr = nullptr;
+					int_prf = nullptr;
+
+
+					continue;
+				}
 
 				delete raw;
 				delete fr;
@@ -294,8 +336,30 @@ int main (int argc, char *argv[])
 				continue;
 			}
 
-			toa = int_prf->get_TOA(*etalon_prf);
-			toa_error = int_prf->get_ERROR();
+			try
+			{
+				toa = int_prf->get_TOA(*etalon_prf);
+				toa_error = int_prf->get_ERROR();
+			}
+			catch (const invalid_argument &err)
+			{
+				if (cfg->verbose)
+					cout << err.what() << endl;
+
+				error_list.push_back(err.what());
+				error_names.push_back(file_name);
+
+				delete raw;
+				delete fr;
+				delete int_prf;
+
+				raw = nullptr;
+				fr = nullptr;
+				int_prf = nullptr;
+
+
+				continue;
+			}
 
 			int_prf->ITOA();
 

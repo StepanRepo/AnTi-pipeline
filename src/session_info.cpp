@@ -106,10 +106,7 @@ Session_info::Session_info(string file_name_in, bool binary) : start_date (0, 0,
 			obs_window = stoi(value);
 
 		else if (name == "sumchan")
-		{
-			if (value == "yes") sumchan = true;
-			if (value == "no") sumchan = false;
-		}
+			sumchan = value;
 
 		else if(name == "dm")
 			dm = stod(value);
@@ -134,6 +131,12 @@ Session_info::Session_info(string file_name_in, bool binary) : start_date (0, 0,
 
 	start_date = Custom_time(start_date_s);
 	start_utc = Custom_time(start_utc_s);
+
+	if (sumchan == "adc")
+	{
+		tau = .2048;
+		obs_window = psr_period*1e3/tau;
+	}
 }
 
 
@@ -295,7 +298,7 @@ int Session_info::get_TOTAL_PULSES() {return total_pulses;}
 
 double Session_info::get_TAU() {return tau;}
 int Session_info::get_OBS_WINDOW() {return obs_window;}
-bool Session_info::get_SUMCHAN() {return sumchan;}
+string Session_info::get_SUMCHAN() {return sumchan;}
 double Session_info::get_FREQ_MIN() {return freq_min;}
 double Session_info::get_FREQ_MAX() {return freq_max;}
 int Session_info::get_CHANELS() {return chanels;}

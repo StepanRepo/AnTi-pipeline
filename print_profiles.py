@@ -50,7 +50,8 @@ if __name__ == "__main__":
                     x[i][j] = np.float16(num)
 
             plt.figure()
-            plt.imshow(x, interpolation = "none", origin = "lower", norm = colors.LogNorm())
+            plt.imshow(x, interpolation = "none", aspect = "auto", origin = "lower"
+                       ,norm = colors.LogNorm())
 
             plt.xlabel("Time")
             plt.ylabel("Frequency channel")

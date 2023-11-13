@@ -3,6 +3,7 @@
 from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib import colors
 import numpy as np
 from scipy import signal
 from scipy import interpolate, optimize
@@ -91,7 +92,8 @@ if __name__ == "__main__":
             ax_histx = fig.add_subplot(gs[0, 0], sharex = ax)
             ax_histy = fig.add_subplot(gs[1, 1], sharey = ax)
 
-            ax.imshow(ccf, interpolation = "none", origin = "lower", aspect = 2)
+            ax.imshow(ccf, interpolation = "none", origin = "lower", aspect = "auto"
+                       ,norm = colors.LogNorm())
 
             ax.set_xlabel("Time")
             ax.set_ylabel("Frequency channel")

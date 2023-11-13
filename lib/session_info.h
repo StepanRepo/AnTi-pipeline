@@ -34,7 +34,7 @@ public:
 
 	double get_TAU();
 	int get_OBS_WINDOW();
-	bool get_SUMCHAN();
+	string get_SUMCHAN();
 	double get_FREQ_MIN();
 	double get_FREQ_MAX();
 	int get_CHANELS();
@@ -58,7 +58,7 @@ private:
 
 	double tau;
 	int obs_window;
-	bool sumchan;
+	string sumchan;
 	double freq_min, freq_max;
 	int chanels;
 };

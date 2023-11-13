@@ -1,6 +1,9 @@
 #include<vector>
 #include<string>
 
+#include"Simple-FFT/include/simple_fft/fft_settings.h"
+#include"Simple-FFT/include/simple_fft/fft.h"
+
 using namespace std;
 
 int max_pos(vector<double>&);
