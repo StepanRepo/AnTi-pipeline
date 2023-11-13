@@ -439,39 +439,11 @@ double Int_profile::get_ERROR()
 double Int_profile::get_SNR()
 {
 	if (snr != 0.0)
-	{
 		return snr;
-	}
-	else
-	{
-		int obs_window = session_info.get_OBS_WINDOW();
-
-		// find level of noise as
-		// 1.0% of maximum of signal
-
-		double max = 2.0*median(profile);
-
-		vector<double> noise_vec, signal_vec;
-		noise_vec.reserve(obs_window);
-		signal_vec.reserve(obs_window);
-
-		for (int i = 0; i < obs_window; i++)
-		{
-			if(profile[i] < max)
-				noise_vec.push_back(profile[i]*profile[i]);
-			else
-				signal_vec.push_back(profile[i]*profile[i]);
-		}
 
 
-		double signal = mean(signal_vec);
-		double noise = mean(noise_vec);
-		
-
-		snr = signal/noise;
-
-		return sqrt(snr);
-	}
+	snr = SNR(profile);
+	return snr;
 }
 
 void Int_profile::read_freq_comp (string file_name)

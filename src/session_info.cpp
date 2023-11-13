@@ -28,7 +28,7 @@ Session_info::Session_info() : start_date (0, 0, 0, 0, 0, 0l), start_utc (0, 0, 
 
 	tau = -1.0;
 	obs_window = -1;
-	sumchan = -1;
+	sumchan = "";
 	freq_min = -1.0;
 	freq_max = -1.0;
 	chanels = 512;
@@ -104,10 +104,7 @@ Session_info::Session_info(string file_name, bool binary) : start_date (0, 0, 0,
 			obs_window = stoi(value);
 
 		else if (name == "sumchan")
-		{
-			if (value == "yes") sumchan = true;
-			if (value == "no") sumchan = false;
-		}
+			sumchan = value;
 
 		else if(name == "dm")
 			dm = stod(value);
@@ -132,6 +129,12 @@ Session_info::Session_info(string file_name, bool binary) : start_date (0, 0, 0,
 
 	start_date = Custom_time(start_date_s);
 	start_utc = Custom_time(start_utc_s);
+
+	if (sumchan == "adc")
+	{
+		tau = .2048;
+		obs_window = psr_period*1e3/tau;
+	}
 }
 
 
@@ -172,29 +175,9 @@ void Session_info::print(string file_name, double freq_comp)
 		out << "F511        " << freq_max << endl;
 	}
 }
-/*
-void Session_info::operator=(Session_info& right)
-{
-	number_params = right.number_params;
 
-	psr_name = right.psr_name;
-	psr_period = right.psr_period;
-	dm = right.dm;
 
-	start_date_s = right.start_date_s;
-	start_utc_s = right.start_utc_s;
-	total_pulses = right.total_pulses;
 
-	start_date = right.start_date;
-	start_utc = right.start_utc;
-
-	tau = right.tau;
-	obs_window = right.obs_window;
-	sumchan = right.sumchan;
-	freq_min = right.freq_min;
-	freq_max = right.freq_max;
-}
-*/
 
 void str_split(string buffer, string& name, string& value)
 {
@@ -292,7 +275,7 @@ int Session_info::get_TOTAL_PULSES() {return total_pulses;}
 
 double Session_info::get_TAU() {return tau;}
 int Session_info::get_OBS_WINDOW() {return obs_window;}
-bool Session_info::get_SUMCHAN() {return sumchan;}
+string Session_info::get_SUMCHAN() {return sumchan;}
 double Session_info::get_FREQ_MIN() {return freq_min;}
 double Session_info::get_FREQ_MAX() {return freq_max;}
 int Session_info::get_CHANELS() {return chanels;}

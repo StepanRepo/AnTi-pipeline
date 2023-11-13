@@ -224,33 +224,7 @@ Etalon_profile::Etalon_profile(vector<Int_profile>& profiles_series)
 
 double Etalon_profile::get_SNR()
 {
-	double snr;
-
-	// find level of noise as
-	// 1.0% of maximum of signal
-
-	// max is equal 1.0
-	//for (int i = 0; i < obs_window; i++)
-	//	if (max < profile[i]) max = profile[i];
-
-	double max = 1e-1;
-
-	vector<double> noise_vec;
-	noise_vec.reserve(obs_window);
-
-	for (int i = 0; i < obs_window; i++)
-	{
-		if(profile[i] < max)
-		{
-			noise_vec.push_back(profile[i]);
-		}
-	}
-
-	double noise = sigma(noise_vec);
-
-	snr = 1.0/(noise);
-
-	return snr;
+	return SNR(profile);
 }
 
 

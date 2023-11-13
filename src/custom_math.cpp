@@ -10,7 +10,6 @@
 
 using namespace std;
 
-
 int max_pos(vector<double>& vec)
 {
 	int pos = 0;
@@ -151,6 +150,25 @@ int min(vector<int>& vec)
 	return value;
 }
 
+
+void normilize_vector (vector<double>& vec)
+{
+	double min_ = min(vec);
+	double max_ = max(vec);
+	double norm_factor = max_ - min_;
+
+	size_t n = vec.size();
+
+	for (size_t i = 0; i < n; ++i)
+	{
+			vec.at(i) = (vec.at(i) - min_)/norm_factor;
+	}
+}
+
+
+
+
+
 double median (vector<double>& vec)
 {
 	double median;
@@ -165,6 +183,7 @@ double median (vector<double>& vec)
 
 	return median;
 }
+
 
 double median (vector<double>& vec, int begin, int end)
 {
@@ -188,6 +207,7 @@ double mean (vector<double>& vec)
 	return mean/double(a.size());
 }
 
+
 double mean (vector<double>& vec, int begin, int end)
 {
 	if (begin < 0) begin = 0;
@@ -209,12 +229,13 @@ double sigma(vector<double>& vec)
 	double m = mean(a);
 
 	for (int i = 0; i < n; i++)
-		deviation += (a[i] - m)*(a[i] - m);
+		deviation += (a.at(i) - m)*(a.at(i) - m);
 
 	deviation = sqrt(deviation/double(n-1));
 
 	return deviation;
 }
+
 
 double sigma(vector<double>& vec, int begin, int end)
 {
@@ -226,7 +247,26 @@ double sigma(vector<double>& vec, int begin, int end)
 	return sigma(a);
 }
 
+double sum (vector<double>& vec)
+{
+	size_t n = vec.size();
+	double sum = 0.0;
 
+	for (size_t i = 0; i < n; ++i)
+		sum += vec.at(i);
+
+	return sum;
+}
+
+double sum (vector<double>& vec, int begin, int end)
+{
+	if (begin < 0) begin = 0;
+	if (end >= (int) vec.size()) end = vec.size() - 1;
+
+	vector<double> a (&vec[begin], &vec[end]);
+
+	return sum(a);
+}
 
 double cycle_discrete_ccf (vector<double>& first, vector<double>& second, int delta)
 {
@@ -365,6 +405,34 @@ double find_root (vector<double> p, double left, double right)
 	}
 
 	return root;
+}
+
+double SNR(vector<double>& vec)
+{
+	// ATTENTION!!!
+	// the function apropriate only for
+	// normalized vectors
+	// i.e. max(vec) = 1 
+	//
+	size_t n = vec.size();
+
+	vector<double> noise, signal_sq;
+	noise.reserve(n);
+	signal_sq.reserve(n);
+
+
+	for (size_t i = 0; i < n; ++i)
+	{
+		if (vec.at(i) < .1)
+			noise.push_back(vec.at(i));
+		else
+			signal_sq.push_back(vec.at(i) * vec.at(i));
+	}
+
+	double signal_power = sqrt(sum(signal_sq));
+
+
+	return signal_power/sigma (noise);
 }
 
 void move_continous(vector<double>& vec, double bias)
