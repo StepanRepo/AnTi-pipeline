@@ -62,36 +62,11 @@ void Etalon_profile::fill_profile(string file_name)
 	profile.reserve(obs_window);
 	double ampl;
 
-	for (int i = 0; i < obs_window; i++)
+	for (size_t i = 0; i < obs_window; i++)
 	{
 		tpl_file >> ampl;
 		profile.push_back(ampl);
 	}
-}
-
-
-void Etalon_profile::normilize()
-{
-	if (cfg->verbose)
-		cout << SUB << "Normilizing of template profile . . .";
-
-	double min = profile[0];
-	double max = 0;
-	double norm_factor;
-
-	for (int j = 0; j < obs_window; j++)
-	{
-		if (profile[j] < min) min = profile[j];
-		if (profile[j] > max) max = profile[j];
-	}
-
-	norm_factor = max - min;
-
-	for (int j = 0; j < obs_window; j++)
-		profile[j] = (profile[j] - min)/norm_factor;
-
-	if (cfg->verbose)
-		cout << OK << endl;
 }
 
 
@@ -140,61 +115,59 @@ Etalon_profile Etalon_profile::scale_profile(double tau_new)
 Etalon_profile::Etalon_profile(vector<Int_profile>& profiles_series)
 {
 	if (cfg->verbose)
-		cout << "Constructing template profile" << endl;
+		cout << endl << BOLD << "Constructing template profile" << RESET << endl;
 
-	int n = profiles_series.size();
+	size_t n = profiles_series.size();
 
 	profile = profiles_series[0].profile;
 	tau = profiles_series[0].session_info.get_TAU();
 	obs_window = profiles_series[0].session_info.get_OBS_WINDOW();
 
 	vector<double> current_int (obs_window);
-
 	vector<double> ccf (2*obs_window);
 
 	double reper_dec;
 	vector<double> near_max(5), coefficients(5), derivative (4);
 
-	double max; 
-	int max_pos;
-
-	for (int i = 1; i < n; i++)
+	for (size_t i = 1; i < n; ++i)
 	{
 		current_int = profiles_series[i].profile;
 
 		// check the size of current vector
-		if ((int) current_int.size() > obs_window)
+		// and fill it with zeros, if its size is smaller 
+		// then obs_window
+		if (current_int.size() > obs_window)
 		{
 			current_int.resize(obs_window);
 		}
-		else if ((int) current_int.size() < obs_window)
+		else if (current_int.size() < obs_window)
 		{
 			current_int.reserve(obs_window - current_int.size());
 
-			for (int i = current_int.size(); i < obs_window; i ++)
+			for (size_t i = current_int.size(); i < obs_window; ++i)
 			       current_int.push_back(0.0);	
 		}
 
-		// correlation of profiles
+		// correlate profiles
 		fill(ccf.begin(), ccf.end(), 0.0);
 
-		for (int j = 0; j < 2*obs_window; j++)
-			ccf[j] = cycle_discrete_ccf(current_int, profile, j - obs_window);
+		for (size_t j = 0; j < 2*obs_window; ++j)
+			ccf.at(j) = cycle_discrete_ccf(current_int, profile, j - obs_window);
+
+
+
+		// print CCF into a file to check it
+		//ofstream file("out/ccf");
+		//for (size_t j = 0; j < 2*obs_window; ++j)
+		//	file << ccf.at(j) << endl;
+			
 		
-		max = 0.0;
-		max_pos = 0;
+		double max_ccf = max(ccf);
+		size_t max_pos_ccf = (max_pos(ccf) % obs_window) + obs_window;
 
-		for (int j = 0; j < 2*obs_window; j++)
-		{
-			if (ccf[j] > max)
-			{
-				max = ccf[j];
-				max_pos = j;
-			}
-		}
 
-		for (int j = -2; j < 3; j++)
-			near_max[j+2] = ccf[max_pos + j]/max;
+		for (int j = -2; j < 3; ++j)
+			near_max[(size_t)j+2] = ccf[max_pos_ccf + (size_t) j]/max_ccf;
 
 		coefficients = interpolation4(near_max);
 
@@ -212,14 +185,22 @@ Etalon_profile::Etalon_profile(vector<Int_profile>& profiles_series)
 			continue;
 		}
 
-		move_continous(current_int, (double) max_pos + reper_dec);
 
-		for (int j = 0; j < obs_window; j++)
-			profile[j] += current_int[j];
+		move_continous(current_int, (double) max_pos_ccf + reper_dec);
+
+		for (size_t j = 0; j < obs_window; ++j)
+			profile.at(j) += current_int.at(j) / (double) n;
 
 	}	
 
-	normilize();
+	if (cfg->verbose)
+		cout << SUB << "Normilizing integral profile...";
+
+
+	int err = normilize_vector(profile);
+
+	if ((cfg->verbose) & (err == 0))
+			cout << OK << endl;
 }
 
 double Etalon_profile::get_SNR()
@@ -237,7 +218,7 @@ void Etalon_profile::print(string file_name)
 	out << "numpointwin = " << obs_window << endl;
 
 
-	for (int i = 0; i < obs_window; i++)
+	for (size_t i = 0; i < obs_window; i++)
 		out << profile[i] << endl;	
 
 	out.close();

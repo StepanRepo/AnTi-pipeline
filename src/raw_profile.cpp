@@ -44,17 +44,22 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 	}
 	else
 	{
-		OBS_SIZE = session_info.get_PSR_PERIOD() * (total_pulses - 1) * 5000000/4;
+		OBS_SIZE = session_info.get_PSR_PERIOD() * (total_pulses - 1) * 5*1024*1024/4; 
 
 		data = new byte32 [OBS_SIZE];
 		read_data(file_name, data);
 
-		signal = new double[2*OBS_SIZE];
+		signal = new double[OBS_SIZE*2];
 	}
 
 	decode_data(data, signal);
 
 	mean_signal_per_chanel = vector (chanels, vector<double>(obs_window));
+
+	for (int i = 0; i < chanels; ++i)
+		for (int j = 0; j < obs_window; ++j)
+			mean_signal_per_chanel[i][j] = 0.0;
+
 	split_data(signal);
 
 
@@ -78,7 +83,7 @@ void Raw_profile::read_data(string file_name, byte32* data)
 		throw invalid_argument (string(ERROR) + "Cann't open observational file to read data" + file_name);
 
 	// skip header of file
-	for (int i = 0; i < session_info.get_NUM_PARAMS(); i++)
+	for (size_t i = 0; i < session_info.get_NUM_PARAMS(); i++)
 		obs_file.ignore(40, '\n');
 
 	obs_file.read((char*) data, 4*OBS_SIZE);
@@ -201,8 +206,8 @@ void Raw_profile::split_data (double* signal)
 	else
 	{
 		size_t arg;
-		double dP = (double) obs_window -
-		       	(double) session_info.get_PSR_PERIOD()*1e3 / session_info.get_TAU();
+		double dP = (double) session_info.get_PSR_PERIOD()*1e3 / session_info.get_TAU()
+			- (double) obs_window;
 
 		for (size_t imp = 0; imp < (size_t) total_pulses - 1; ++imp)
 		{
@@ -210,10 +215,10 @@ void Raw_profile::split_data (double* signal)
 			{
 				for (size_t i = 0; i < channels; ++i)
 				{
-					arg = i + (k + obs_window*imp + int (1.5*dP*imp))*512ul; //canonical
+					arg = i + (k + obs_window*imp - int (1.5*dP*imp))*512ul; 
 
-					if (arg > (size_t) 2*OBS_SIZE)
-						cout << "bad news:  " << arg << "   " << 2*OBS_SIZE << endl;
+					if (arg > (size_t) OBS_SIZE*2)
+						cout << "bad news:  " << arg << "   " << OBS_SIZE*2 << endl;
 
 					mean_signal_per_chanel[i][k] += signal[arg];
 				}

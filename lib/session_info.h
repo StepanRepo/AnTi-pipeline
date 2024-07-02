@@ -19,7 +19,7 @@ public:
 	void print(string file_name, double freq_comp = 0.0);
 
 
-	int get_NUM_PARAMS();
+	size_t get_NUM_PARAMS();
 
 	string get_PSR_NAME();
 	long double get_PSR_PERIOD();
@@ -28,20 +28,20 @@ public:
 	Custom_time get_START_DATE();
 	Custom_time get_START_UTC();
 
-	int get_TOTAL_PULSES();
+	size_t get_TOTAL_PULSES();
 
 	double get_TAU();
-	int get_OBS_WINDOW();
+	size_t get_OBS_WINDOW();
 	string get_SUMCHAN();
 	double get_FREQ_MIN();
 	double get_FREQ_MAX();
-	int get_CHANELS();
+	size_t get_CHANELS();
 
-	void set_TOTAL_PULSES(int);
+	void set_TOTAL_PULSES(size_t);
 	//void operator=(Session_info& right);
 
 private:
-	int number_params;
+	size_t number_params;
 
 	string psr_name;
 	long double psr_period;
@@ -49,16 +49,16 @@ private:
 
 	string start_date_s;
 	string start_utc_s;
-	int total_pulses;
+	size_t total_pulses;
 
 	Custom_time start_date;
 	Custom_time start_utc;
 
 	double tau;
-	int obs_window;
+	size_t obs_window;
 	string sumchan;
 	double freq_min, freq_max;
-	int chanels;
+	size_t chanels;
 };
 
 

@@ -15,42 +15,8 @@ using namespace std;
 
 extern Configuration *cfg;
 
-Int_profile::Int_profile(Raw_profile& raw) : session_info()
-{
-	if (cfg->verbose)
-		cout << "Making integral profile" << endl;
 
-	session_info = raw.session_info;
-
-	int obs_window = session_info.get_OBS_WINDOW();
-	int channels = session_info.get_CHANELS(); 
-
-	vector<double> chanel_delay (channels);
-	compensated_signal_per_chanel = vector (channels, vector<double>(obs_window));
-
-	freq_comp = session_info.get_FREQ_MAX();
-
-	calculate_chanel_delay (chanel_delay);
-	move_chanel_profiles(&raw, chanel_delay);
-
-	profile = vector<double> (obs_window);
-
-	for (int j = 0; j < obs_window; j++)
-		profile[j] = 0;
-
-	average_profiles();
-
-	normilize_profile();
-
-	toa = 0.0l;
-	toa_error = 0.0l;
-
-	snr = 0.0;
-	snr = get_SNR();
-
-}
-
-Int_profile::Int_profile(Raw_profile& raw, vector<double> mask) : session_info()
+Int_profile::Int_profile(Raw_profile& raw, vector<double>* mask) : session_info()
 {
 	if (cfg->verbose)
 		cout << "Making integral profile" << endl;
@@ -73,7 +39,7 @@ Int_profile::Int_profile(Raw_profile& raw, vector<double> mask) : session_info()
 	for (int j = 0; j < obs_window; j++)
 		profile[j] = 0.0;
 
-	average_profiles(mask);
+	average_profiles(*mask);
 
 	normilize_profile();
 
@@ -95,18 +61,18 @@ Int_profile::Int_profile (string file_name) : session_info(file_name, false)
 	if (!obs_file)
 		throw invalid_argument (string(ERROR) + "Cann't open observational file to read data" + file_name);
 
-	int obs_window = session_info.get_OBS_WINDOW();
+	size_t obs_window = session_info.get_OBS_WINDOW();
 
 	compensated_signal_per_chanel = vector (1, vector<double>(obs_window));
 	profile = vector<double> (obs_window);
 
 	string buffer;
 
-	// skip header of file
-	for (int i = 0; i < session_info.get_NUM_PARAMS(); i++)
+	// skip header of the file
+	for (size_t i = 0; i < session_info.get_NUM_PARAMS(); i++)
 		getline(obs_file, buffer);	
 	
-	for (int i = 0; i < obs_window; i++)
+	for (size_t i = 0; i < obs_window; i++)
 	{
 		getline(obs_file, buffer);	
 
@@ -118,7 +84,7 @@ Int_profile::Int_profile (string file_name) : session_info(file_name, false)
 		if (pos < 200)
 			buffer[pos] = '.';
 
-		profile[i] = stod(buffer);
+		profile.at(i) = stod(buffer);
 	}
 
 	normilize_profile();
@@ -454,7 +420,7 @@ void Int_profile::read_freq_comp (string file_name)
 	if (!obs_file)
 		throw invalid_argument (string(ERROR) + "Cann't open observational file to read header" + file_name);
 
-	int i = 0;
+	size_t i = 0;
 
 	while (getline (obs_file, buffer))
 	{
@@ -489,7 +455,7 @@ void Int_profile::print(string file_name)
 	ofstream out (file_name, ios_base::app);
 	out.precision(8);
 
-	for (int i = 0; i < session_info.get_OBS_WINDOW(); i++)
+	for (size_t i = 0; i < session_info.get_OBS_WINDOW(); i++)
 		out << tau * (double) i << " " << profile[i] << endl;	
 
 	out.close();

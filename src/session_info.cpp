@@ -14,6 +14,7 @@ extern Configuration* cfg;
 
 void str_split(string buffer, string& name, string& value);
 
+
 Session_info::Session_info() : start_date (0, 0, 0, 0, 0, 0l), start_utc (0, 0, 0, 0, 0, 0l)
 {
 	number_params = -1;
@@ -69,7 +70,7 @@ Session_info::Session_info(string file_name, bool binary) : start_date (0, 0, 0,
 
 	number_params = stoi(value);
 
-	for (int i = 1; i < number_params; i++)
+	for (size_t i = 1; i < number_params; i++)
 	{
 		if (binary)
 		{
@@ -177,6 +178,23 @@ void Session_info::print(string file_name, double freq_comp)
 }
 
 
+void strip_white(string& line)
+{
+	if (line == "" or line.size() == 0) return;
+
+	size_t n = line.size();
+
+	for (size_t i = 0; i < n; i++)
+	{
+		if (line[i] == ' ' or line[i] == '\t') 
+		{
+			line.erase(i, 1);
+			i--;
+			n--;
+		}
+	}
+}
+
 
 
 void str_split(string buffer, string& name, string& value)
@@ -205,15 +223,15 @@ void str_split(string buffer, string& name, string& value)
 	{
 		value = buffer.substr(i);
 
-		// заменить конец строки на пробел
-		// для избежания проблем с кодировкой
+		// remove the last character from the line
+		// if it's bad character
 		size_t null = value.find('\r');
 		if (null < 200)
-			value[null] = ' ';
+			value = value.substr(0, null);
 
 		null = value.find('\0');
 		if (null < 200)
-			value[null] = ' ';
+			value = value.substr(0, null);
 
 		return;
 	}
@@ -227,18 +245,21 @@ void str_split(string buffer, string& name, string& value)
 		i++;
 	}
 
-	// заменить конец строки на пробел
-	// для избежания проблем с кодировкой
+	strip_white(name);
+	strip_white(value);
+
+	// remove the last character from the line
+	// if it's bad character
 	size_t null = value.find('\r');
 	if (null < 200)
-		value[null] = ' ';
+		value = value.substr(0, null);
 
 	null = value.find('\0');
 	if (null < 200)
-		value[null] = ' ';
+		value = value.substr(0, null);
 }
 
-int Session_info::get_NUM_PARAMS() {return number_params;}
+size_t Session_info::get_NUM_PARAMS() {return number_params;}
 
 string Session_info::get_PSR_NAME() {return psr_name;}
 long double Session_info::get_PSR_PERIOD() {return psr_period;}
@@ -271,15 +292,15 @@ Custom_time Session_info::get_START_UTC()
 	return start_utc;
 }
 
-int Session_info::get_TOTAL_PULSES() {return total_pulses;}
+size_t Session_info::get_TOTAL_PULSES() {return total_pulses;}
 
 double Session_info::get_TAU() {return tau;}
-int Session_info::get_OBS_WINDOW() {return obs_window;}
+size_t Session_info::get_OBS_WINDOW() {return obs_window;}
 string Session_info::get_SUMCHAN() {return sumchan;}
 double Session_info::get_FREQ_MIN() {return freq_min;}
 double Session_info::get_FREQ_MAX() {return freq_max;}
-int Session_info::get_CHANELS() {return chanels;}
+size_t Session_info::get_CHANELS() {return chanels;}
 
 
 
-void Session_info::set_TOTAL_PULSES(int num) {total_pulses = num;}
+void Session_info::set_TOTAL_PULSES(size_t num) {total_pulses = num;}

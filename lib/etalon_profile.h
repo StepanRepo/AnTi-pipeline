@@ -17,7 +17,6 @@ class Etalon_profile
 
 		vector<double> profile;
 
-		void normilize();
 		double get_SNR();
 
 		double get_TAU();
@@ -28,7 +27,7 @@ class Etalon_profile
 		void print(string file_name);
 	private:
 		double tau;
-		int obs_window;
+		size_t obs_window;
 
 		void read_header(string file_name);
 		void fill_profile(string file_name);

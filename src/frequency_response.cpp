@@ -72,7 +72,7 @@ void Frequency_response::fill_mask()
 void Frequency_response::throw_if_mask_is_null()
 {
 	double mask_sum = 0;
-	for (int i = 0; i < session_info.get_CHANELS(); ++i)
+	for (size_t i = 0; i < session_info.get_CHANELS(); ++i)
 		mask_sum += mask[i]*profile[i];
 
 
@@ -90,7 +90,7 @@ void Frequency_response::derivative_filter(double p1)
 
 	double m = median(profile);
 
-	for (int i = 0; i < session_info.get_CHANELS() - 1; i++)
+	for (size_t i = 0; i < session_info.get_CHANELS() - 1; i++)
 	{
 		if ((profile[i] - profile[i+1])/m > p1)
 		{
@@ -161,7 +161,7 @@ void Frequency_response::median_filter(double p2)
 	double m;
 	double s;
 
-	for (int i = 0; i < session_info.get_CHANELS(); i++)
+	for (size_t i = 0; i < session_info.get_CHANELS(); i++)
 	{
 		m = median(profile, i-5, i+5);
 		s = sigma(profile, i-5, i+5);
@@ -182,7 +182,7 @@ void Frequency_response::median_filter(double p2, int width)
 {
 	median_filter(p2);
 
-	int i = 0;
+	size_t i = 0;
 
 	while (i < width)
 	{
@@ -212,7 +212,7 @@ void Frequency_response::median_filter(double p2, int width)
 	{
 		if (mask[i] == 0.0)
 		{
-			for (int j = i-width; j < session_info.get_CHANELS(); j++)
+			for (size_t j = i-width; j < session_info.get_CHANELS(); j++)
 				mask[j] = 0.0;
 			i += width;
 		}

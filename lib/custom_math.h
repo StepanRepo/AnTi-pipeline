@@ -17,7 +17,7 @@ int max(vector<int>&);
 int min_pos(vector<int>&);
 int min(vector<int>&);
 
-void normilize_vector (vector<double>&);
+int normilize_vector (vector<double>&);
 
 
 // statictical characteristics of vectors

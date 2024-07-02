@@ -151,7 +151,7 @@ int min(vector<int>& vec)
 }
 
 
-void normilize_vector (vector<double>& vec)
+int normilize_vector (vector<double>& vec)
 {
 	double min_ = min(vec);
 	double max_ = max(vec);
@@ -163,6 +163,8 @@ void normilize_vector (vector<double>& vec)
 	{
 			vec.at(i) = (vec.at(i) - min_)/norm_factor;
 	}
+
+	return 0;
 }
 
 
@@ -442,6 +444,7 @@ void move_continous(vector<double>& vec, double bias)
 
 	int delta_int = int(bias);
 	double delta_dec = bias - double(delta_int);
+	delta_dec = 0.0;
 
 	int n = vec.size();
 	vector<double> temp_1 (n), temp_2(n);
@@ -456,3 +459,6 @@ void move_continous(vector<double>& vec, double bias)
 	for(int j = 0; j < n; j++)
 		vec[j] = (1.0 - delta_dec)*temp_1[j] + delta_dec*temp_2[j];
 }
+
+
+
