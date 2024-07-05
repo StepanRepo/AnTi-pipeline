@@ -4,6 +4,7 @@ SHELL := /bin/bash
 errors = -Wall -Wextra -pedantic
 mem = -fbounds-check -g
 opt = -O2 # -fopenmp
+flags = -Llib/
 
 
 msg = lib/massages.h
@@ -13,12 +14,12 @@ obj = $(files:src/%.cpp=.o/%.o)
 
 
 
-compile_current = g++ $(errors) $(mem) $(opt) -c $< -o $@
+compile_current = g++ $(errors) $(mem) $(opt) $(flags) -c $< -o $@
 
 #main: .o/configuration.o .o/etalon_profile.o .o/custom_time.o .o/custom_math.o .o/session_info.o .o/raw_profile.o .o/frequency_response.o .o/int_profile.o .o/main.o
 #	g++ $(errors) $(mem) $(opt) $^ -I./lib -L./lib  -o $@
 main: $(msg) $(obj) #.o/raw_profile.o .o/int_profile.o .o/etalon_profile.o .o/frequency_response.o .o/configuration.o 
-	g++ $(errors) $(mem) $(opt) $^ -o $@
+	g++ $(errors) $(mem) $(opt) $(flags) $^ -o $@
 
 # Compile object files
 .o/raw_profile.o: src/raw_profile.cpp lib/raw_profile.h $(msg) .o/session_info.o  .o/configuration.o
