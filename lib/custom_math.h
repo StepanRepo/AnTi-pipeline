@@ -1,6 +1,8 @@
 #include <vector>
 #include<string>
 
+#define __USE_SQUARE_BRACKETS_FOR_ELEMENT_ACCESS_OPERATOR // setting for FFT library
+
 #include"Simple-FFT/include/simple_fft/fft_settings.h"
 #include"Simple-FFT/include/simple_fft/fft.h"
 
