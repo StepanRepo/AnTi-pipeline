@@ -46,6 +46,7 @@ AnTi pipeline имеет два режима работы: определени�
 ### Установка
 ```
     git clone git@github.com:StepanRepo/AnTi-pipeline.git
+    git submodule init && git submodule update
     cd AnTi-pipeline
     make 
 ```
