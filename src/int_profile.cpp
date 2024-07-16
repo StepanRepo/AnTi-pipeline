@@ -18,46 +18,61 @@ extern Configuration *cfg;
 
 Int_profile::Int_profile(Raw_profile& raw, vector<double>* mask) : session_info()
 {
+// calculates integral profile from given folded profile and (optional) channel mask
 	if (cfg->verbose)
 		cout << "Making integral profile" << endl;
 
+	// copy session info from raw data class
 	session_info = raw.session_info;
 
+	// declare basic properties of observational session 
 	int obs_window = session_info.get_OBS_WINDOW();
 	int channels = session_info.get_CHANELS(); 
 
+	// place arrays with dispersional delay for every freq channel 
+	// and with compensated for this delay profiles in RAM
 	vector<double> chanel_delay (channels);
 	compensated_signal_per_chanel = vector (channels, vector<double>(obs_window));
 
+	// set comparsion frequency as maximal availible frequency
 	freq_comp = session_info.get_FREQ_MAX();
 
+	// calculate dispersional delay for every freq channel
+	// move folded profile in every channel according to calculated delays
 	calculate_chanel_delay (chanel_delay);
 	move_chanel_profiles(&raw, chanel_delay);
 
+	// place an array with inteegral profile in RAM
 	profile = vector<double> (obs_window);
 
 	for (int j = 0; j < obs_window; j++)
 		profile[j] = 0.0;
 
+	// sum profiles over all freq channels (to obtain integral profile)
 	average_profiles(*mask);
 
+	// normilize this profile so that its maximum equals 1 and minimum equals 0
 	normilize_profile();
 
+	// set default values to variables until they are needed
 	toa = 0.0l;
 	toa_error = 0.0l;
 
-	snr = 0.0;
 	snr = get_SNR();
 }
 
 
 Int_profile::Int_profile (string file_name) : session_info(file_name, false)
 {
+// reads integral profile from given file 
+
 	if (cfg->verbose)
 		cout << "Reading integral profile" << endl;
 
+	// try to open input file
 	ifstream obs_file (file_name, ios::in);
 
+	// check if it's possible
 	if (!obs_file)
 		throw invalid_argument (string(ERROR) + "Cann't open observational file to read data" + file_name);
 

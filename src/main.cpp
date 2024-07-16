@@ -13,7 +13,7 @@
 
 using namespace std;
 
-Configuration* cfg;
+Configuration* cfg{nullptr};
 
 Int_profile* get_int_prf(string file_name)
 {
@@ -73,30 +73,64 @@ Int_profile* get_int_prf(string file_name)
 }
 
 
-
-
-int main (int argc, char *argv[])
+void read_command_line(int argc, char **argv)
 {
+
 	// section for reading configuration file name from CL
 	int i;
 
 	// is exists custom configuration file?
 	for (i = 1; i < argc; i++)
 	{
-		if (argv[i][0] == '-')
-			continue;
+		if (string(argv[i]) == "-c")
+		{
+			i ++;
+			if(i < argc)
+				cfg = new Configuration(argv[i]);
+
+			else
+			{
+				cout << WARNING << "Custom configuration file wasn't set. Default will be used istead" << endl;
+				cfg = new Configuration();
+			}
+
+		}
+		else if (string(argv[i]) == "-h" || string(argv[i]) == "--help")
+		{
+			i ++;
+			cout << "Usage: ./main [-c configuration_file] " << endl << endl;
+			cout << "Options and arguments:" << endl << endl;;
+
+			cout << "\t-h, --help                    : show this help message" << endl;
+			cout << "\t-c file_name, --cfg file_name : use custom configuration file (file_name) instead of default one" << endl << endl;;
+
+			cout << "Options to modificate configuration:" << endl;
+			cout << "\tUse name of the parameter you want to adjust:" << endl;
+			cout << "\t\t--name[=new_value]" << endl;
+			cout << "\tif the parameter in configurations is boolean value then use just its name to set value equal to True" << endl;
+			exit(0);
+		}
 		else
 		{
-			cfg = new Configuration(argv[i]);
-			break;
+			cout << "Unknown command line argument: " << argv[i] << endl;
 		}
 	}
+}
+
+
+
+
+int main (int argc, char *argv[])
+{
+	read_command_line(argc, argv);
 
 	// there aren't custom configuration file
-	if (i == argc)
+	if ((argc == 1) || (cfg == nullptr))
 		cfg = new Configuration();
 
+
 	cfg->command_line(argc, argv);
+
 
 
 	Etalon_profile *etalon_prf = nullptr;
@@ -155,8 +189,21 @@ int main (int argc, char *argv[])
 
 		// construct etalon profile from the set of integral profiles
 		// and save it into a file
-		etalon_prf = new Etalon_profile(profiles);
-		etalon_prf->print(cfg->output_dir + profiles[0].session_info.get_PSR_NAME() + ".tpl");
+		try
+		{
+			etalon_prf = new Etalon_profile(profiles);
+			etalon_prf->print(cfg->output_dir + profiles[0].session_info.get_PSR_NAME() + ".tpl");
+		}
+		catch (const invalid_argument &err)
+		{
+			if (cfg->verbose)
+				cout << err.what() << endl;
+
+			error_list.push_back(err.what());
+			error_names.push_back(cfg->tplfile);
+
+			exit(0);
+		}
 
 		// print some usefull info about new etalon profile
 		cout << endl << "Template profile was made from " << profiles.size() << " integral profiles" << endl;

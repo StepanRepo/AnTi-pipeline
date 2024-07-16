@@ -13,11 +13,14 @@ Custom_time::Custom_time (string time_s)
 {
 // string format: dd.mm.yy hh:mm:ss  sssssss
 
+	// remove spaces from the line
 	time_s.erase(remove_if(time_s.begin(), time_s.end(), ::isspace), time_s.end());
 
+	// if year is represented like yy then make it like 20yy
 	if (time_s.length() == 23)
 		time_s = time_s.substr(0, 6) + "20" + time_s.substr(6);
 
+	// try to get date numbers from given string
 	try
 	{
 		day = stoi(time_s.substr(0, 2));
@@ -39,6 +42,7 @@ Custom_time::Custom_time (string time_s)
 
 Custom_time::Custom_time (int yr, int mnth, int d, int h, int m, long double s)
 {
+// constructs Custom_time class with given date
 	year = yr;
 	month = mnth;
 	day = d;
@@ -59,6 +63,7 @@ long double Custom_time::get_MJD()
 
 void Custom_time::calculate_mjd()
 {
+// calculates MJD date for given UTC date
 	int y = (long double) year;
 	int m = (long double) month;
 	int d = (long double) day;

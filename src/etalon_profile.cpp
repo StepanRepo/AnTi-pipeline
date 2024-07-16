@@ -117,6 +117,9 @@ Etalon_profile::Etalon_profile(vector<Int_profile>& profiles_series)
 	if (cfg->verbose)
 		cout << endl << BOLD << "Constructing template profile" << RESET << endl;
 
+	if (profiles_series.size() == 0)
+		throw invalid_argument (string(ERROR) + "There is no intergral profiles to calculate template profile");
+
 	size_t n = profiles_series.size();
 
 	profile = profiles_series[0].profile;

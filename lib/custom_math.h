@@ -9,31 +9,20 @@
 
 using namespace std;
 
-int max_pos(vector<double>&);
-double max(vector<double>&);
-int min_pos(vector<double>&);
-double min(vector<double>&);
+template<typename T> size_t max_pos(vector<T>&);
+template<typename T> T max(vector<T>&);
+template<typename T> size_t min_pos(vector<T>&);
+template<typename T> T min(vector<T>&);
 
-int max_pos(vector<int>&);
-int max(vector<int>&);
-int min_pos(vector<int>&);
-int min(vector<int>&);
 
 int normilize_vector (vector<double>&);
 
 
 // statictical characteristics of vectors
-double median (vector<double>&);
-double median (vector<double>&, int, int);
-
-double mean (vector<double>&);
-double mean (vector<double>&, int, int);
-
-double sum (vector<double>&);
-double sum (vector<double>&, int, int);
-
-double sigma(vector<double>&);
-double sigma(vector<double>&, int, int);
+double median (vector<double>&, size_t = 0, size_t = 0);
+double mean (vector<double>&, size_t = 0, size_t = 0);
+double sum (vector<double>&, size_t = 0, size_t = 0);
+double sigma (vector<double>&, size_t = 0, size_t = 0);
 
 
 // correlations
@@ -46,6 +35,7 @@ vector<double> interpolation4 (vector<double> f);
 double horner (vector<double>& p, double x);
 double find_root (vector<double> p, double left, double right);
 
-double SNR(vector<double>&);
 
+// specific functions for profiles
+double SNR(vector<double>&);
 void move_continous (vector<double>& vec, double bias);

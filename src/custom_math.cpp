@@ -10,10 +10,10 @@
 
 using namespace std;
 
-int max_pos(vector<double>& vec)
+template<typename T> size_t max_pos(vector<T>& vec)
 {
-	int pos = 0;
-	double value = vec.at(0);
+	size_t pos = 0;
+	T value = vec.at(0);
 
 	size_t n = vec.size();
 
@@ -22,86 +22,16 @@ int max_pos(vector<double>& vec)
 		if (value < vec.at(i))
 		{
 			value = vec.at(i);
-			pos = (int) i;
+			pos = i;
 		}
 	}
 
 	return pos;
 }
 
-double max(vector<double>& vec)
+template<typename T> T max(vector<T>& vec)
 {
-	double value = vec.at(0);
-	size_t n = vec.size();
-
-	for (size_t i = 0; i < n; ++i)
-	{
-		if (value < vec.at(i))
-		{
-			value = vec.at(i);
-		}
-	}
-
-	return value;
-}
-
-int min_pos(vector<double>& vec)
-{
-	int pos = 0;
-	double value = vec.at(0);
-
-	size_t n = vec.size();
-
-	for (size_t i = 0; i < n; ++i)
-	{
-		if (value > vec.at(i))
-		{
-			value = vec.at(i);
-			pos = (int) i;
-		}
-	}
-
-	return pos;
-}
-
-double min(vector<double>& vec)
-{
-	double value = vec.at(0);
-	size_t n = vec.size();
-
-	for (size_t i = 0; i < n; ++i)
-	{
-		if (value > vec.at(i))
-		{
-			value = vec.at(i);
-		}
-	}
-
-	return value;
-}
-
-int max_pos(vector<int>& vec)
-{
-	int pos = 0;
-	int value = vec.at(0);
-
-	size_t n = vec.size();
-
-	for (size_t i = 0; i < n; ++i)
-	{
-		if (value < vec.at(i))
-		{
-			value = vec.at(i);
-			pos = (int) i;
-		}
-	}
-
-	return pos;
-}
-
-int max(vector<int>& vec)
-{
-	int value = vec.at(0);
+	T value = vec.at(0);
 	size_t n = vec.size();
 
 	for (size_t i = 0; i < n; ++i)
@@ -115,10 +45,10 @@ int max(vector<int>& vec)
 	return value;
 }
 
-int min_pos(vector<int>& vec)
+template<typename T> size_t min_pos(vector<T>& vec)
 {
-	int pos = 0;
-	int value = vec.at(0);
+	size_t pos = 0;
+	double value = vec.at(0);
 
 	size_t n = vec.size();
 
@@ -127,16 +57,16 @@ int min_pos(vector<int>& vec)
 		if (value > vec.at(i))
 		{
 			value = vec.at(i);
-			pos = (int) i;
+			pos = i;
 		}
 	}
 
 	return pos;
 }
 
-int min(vector<int>& vec)
+template<typename T> T min(vector<T>& vec)
 {
-	int value = vec.at(0);
+	T value = vec.at(0);
 	size_t n = vec.size();
 
 	for (size_t i = 0; i < n; ++i)
@@ -149,6 +79,7 @@ int min(vector<int>& vec)
 
 	return value;
 }
+
 
 
 int normilize_vector (vector<double>& vec)
@@ -170,11 +101,13 @@ int normilize_vector (vector<double>& vec)
 
 
 
-
-double median (vector<double>& vec)
+double median (vector<double>& vec, size_t begin, size_t end)
 {
+	if (end >= vec.size() || end == 0) 
+		end = vec.size() - 1;
+
+	vector<double> a (&vec.at(begin), &vec.at(end));
 	double median;
-	vector<double> a = vec;
 
 	sort(a.begin(), a.end());
 
@@ -187,43 +120,42 @@ double median (vector<double>& vec)
 }
 
 
-double median (vector<double>& vec, int begin, int end)
+double mean (vector<double>& vec, size_t begin, size_t end)
 {
-	if (begin < 0) begin = 0;
-	if (end >= (int) vec.size()) end = vec.size() - 1;
+	if (end >= vec.size() || end == 0) 
+		end = vec.size() - 1;
 
 	vector<double> a (&vec[begin], &vec[end]);
-
-	return median(a);
-}
-
-
-double mean (vector<double>& vec)
-{
-	vector<double> a = vec;
 	double mean = 0.0;
 
-	for (int i = 0; i < (int) a.size(); i++)
+	for (size_t i = 0; i < a.size(); i++)
 		mean += a[i];
 
 	return mean/double(a.size());
 }
 
 
-double mean (vector<double>& vec, int begin, int end)
+double sum (vector<double>& vec, size_t begin, size_t end)
 {
-	if (begin < 0) begin = 0;
-	if (end >= (int) vec.size()) end = vec.size() - 1;
+	if (end >= vec.size() || end == 0) 
+		end = vec.size() - 1;
 
 	vector<double> a (&vec[begin], &vec[end]);
+	double sum = 0.0;
 
-	return mean(a);
+	for (size_t i = 0; i < vec.size(); ++i)
+		sum += vec.at(i);
+
+	return sum;
 }
 
 
-double sigma(vector<double>& vec)
+double sigma(vector<double>& vec, size_t begin, size_t end)
 {
-	vector<double> a = vec;
+	if (end >= vec.size() || end == 0) 
+		end = vec.size() - 1;
+
+	vector<double> a (&vec[begin], &vec[end]);
 
 	double deviation = 0.0;
 	int n = a.size();
@@ -239,36 +171,8 @@ double sigma(vector<double>& vec)
 }
 
 
-double sigma(vector<double>& vec, int begin, int end)
-{
-	if (begin < 0) begin = 0;
-	if (end >= (int) vec.size()) end = vec.size() - 1;
 
-	vector<double> a (&vec[begin], &vec[end]);
 
-	return sigma(a);
-}
-
-double sum (vector<double>& vec)
-{
-	size_t n = vec.size();
-	double sum = 0.0;
-
-	for (size_t i = 0; i < n; ++i)
-		sum += vec.at(i);
-
-	return sum;
-}
-
-double sum (vector<double>& vec, int begin, int end)
-{
-	if (begin < 0) begin = 0;
-	if (end >= (int) vec.size()) end = vec.size() - 1;
-
-	vector<double> a (&vec[begin], &vec[end]);
-
-	return sum(a);
-}
 
 double cycle_discrete_ccf (vector<double>& first, vector<double>& second, int delta)
 {
@@ -462,3 +366,23 @@ void move_continous(vector<double>& vec, double bias)
 
 
 
+
+template size_t max_pos(vector<double>& vec);
+template size_t max_pos(vector<long double>& vec);
+template size_t max_pos(vector<int>& vec);
+template size_t max_pos(vector<size_t>& vec);
+
+template size_t min_pos(vector<double>& vec);
+template size_t min_pos(vector<long double>& vec);
+template size_t min_pos(vector<int>& vec);
+template size_t min_pos(vector<size_t>& vec);
+
+template double max(vector<double>& vec);
+template long double max(vector<long double>& vec);
+template int max(vector<int>& vec);
+template size_t max(vector<size_t>& vec);
+
+template double min(vector<double>& vec);
+template long double min(vector<long double>& vec);
+template int min(vector<int>& vec);
+template size_t min(vector<size_t>& vec);
