@@ -429,7 +429,7 @@ double Int_profile::get_ERROR()
 		sqrt(session_info.get_FREQ_MAX() - session_info.get_FREQ_MIN()) /
 		sqrt(session_info.get_PSR_PERIOD() * session_info.get_TOTAL_PULSES()) *
 		pow((k2-k1) * session_info.get_TAU()*1e-3/session_info.get_PSR_PERIOD(), 1.5) *
-		session_info.get_PSR_PERIOD() * 1e3;
+		session_info.get_PSR_PERIOD() * 1e6;
 
 	// if error is more than 1 ms than we set it to .999 ms
 	// to format the output
