@@ -22,7 +22,7 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 	// set basic properties of observational session
 	int total_pulses = session_info.get_TOTAL_PULSES();
 	int obs_window = session_info.get_OBS_WINDOW();
-	int chanels = session_info.get_CHANELS();
+	int channels = session_info.get_CHANELS();
 
 	// declare arrays for 4-byte raw data and decoded double data
 	byte32* data;
@@ -32,7 +32,7 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 	if (session_info.get_SUMCHAN() != "adc")
 	{
 		// if it's basic BSA type, OBS_SIZE is just number of points in the file
-		OBS_SIZE = total_pulses * obs_window * chanels;
+		OBS_SIZE = total_pulses * obs_window * channels;
 
 		// set the size of raw data array and fill with data from the file
 		data = new byte32 [OBS_SIZE];
@@ -42,7 +42,7 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 		if (session_info.get_SUMCHAN() == "yes")
 		{
 			// pre-processed file contains only one profile at every channel
-			signal = new double[chanels * obs_window];
+			signal = new double[channels * obs_window];
 			session_info.set_TOTAL_PULSES(1);
 		}
 		else
@@ -68,11 +68,11 @@ Raw_profile::Raw_profile(string file_name) : session_info(file_name, true)
 	decode_data(data, signal);
 
 	// declare vector of folded profile and fill it with zeros
-	mean_signal_per_chanel = vector (chanels, vector<double>(obs_window));
+	mean_signal_per_channel = vector (channels, vector<double>(obs_window));
 
-	for (int i = 0; i < chanels; ++i)
+	for (int i = 0; i < channels; ++i)
 		for (int j = 0; j < obs_window; ++j)
-			mean_signal_per_chanel[i][j] = 0.0;
+			mean_signal_per_channel[i][j] = 0.0;
 
 	// calculate folded profile for the given data
 	split_data(signal);
@@ -125,9 +125,9 @@ void Raw_profile::decode_data(byte32* data, double* signal)
 		// for this type of files data is storaged in basic float format
 		// there is no need to decode it
 		int obs_window = session_info.get_OBS_WINDOW();
-		int chanels = session_info.get_CHANELS();
+		int channels = session_info.get_CHANELS();
 
-		for (int i = 0; i < chanels*obs_window; ++i)
+		for (int i = 0; i < channels*obs_window; ++i)
 			signal[i] = (double) data[i].as_float;
 	}
 	else if (session_info.get_SUMCHAN() == "no")
@@ -235,7 +235,7 @@ void Raw_profile::split_data (double* signal)
 
 	// fill resulting profile with zeros
 	for (int i = 0; i < 512; i++)
-		fill(mean_signal_per_chanel[i].begin(), mean_signal_per_chanel[i].end(), 0.0);
+		fill(mean_signal_per_channel[i].begin(), mean_signal_per_channel[i].end(), 0.0);
 
 	int chan_and_window = channels*obs_window;
 
@@ -249,7 +249,7 @@ void Raw_profile::split_data (double* signal)
 			{
 				for (size_t i = 0; i < channels; ++i)
 				{
-					mean_signal_per_chanel[i][k] +=
+					mean_signal_per_channel[i][k] +=
 					       	signal[i + k*channels + imp*chan_and_window];
 				}
 			}
@@ -277,7 +277,7 @@ void Raw_profile::split_data (double* signal)
 					if (arg > (size_t) OBS_SIZE*2)
 						cout << "bad news:  " << arg << "   " << OBS_SIZE*2 << endl;
 
-					mean_signal_per_chanel[i][k] += signal[arg];
+					mean_signal_per_channel[i][k] += signal[arg];
 				}
 			}
 		}

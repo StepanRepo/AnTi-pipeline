@@ -21,12 +21,9 @@ class Frequency_response
 		vector<double> profile;
 
 		vector<double> mask;
-	
-		void derivative_filter(double p1);
-		void median_filter(double p2);
 
-		void derivative_filter(double p1, int width);
-		void median_filter(double p2, int width);
+		void derivative_filter(double p1, size_t width = 0);
+		void median_filter(double p2, size_t width = 0);
 
 		void print(string file_name);
 		void print_masked(string file_name);

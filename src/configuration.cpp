@@ -153,10 +153,10 @@ void Configuration::fill_config(string file_name)
 		}
 		else if (name == "deriv_width")
 		{
-			deriv_width = my_stoi(value, line_num);
+			deriv_width = (size_t) my_stoi(value, line_num);
 
 			// use default value if it's impossible to read double number from string
-			if (deriv_width == -1)
+			if (deriv_width == (size_t) -1)
 				deriv_threshold = 2;
 			else
 				is_deriv_width = true;
@@ -173,10 +173,10 @@ void Configuration::fill_config(string file_name)
 		}
 		else if (name == "median_width")
 		{
-			median_width = my_stoi(value, line_num);
+			median_width = (size_t) my_stoi(value, line_num);
 
 			// use default value if it's impossible to read double number from string
-			if (median_width == -1)
+			if (median_width == (size_t) -1)
 				median_width = 1;
 			else
 				is_median_width = true;
@@ -289,10 +289,10 @@ void Configuration::command_line(int argc, char** argv)
 		}
 		else if (name == "deriv_width")
 		{
-			deriv_width = my_stoi(value, i);
+			deriv_width = (size_t) my_stoi(value, i);
 
 			// use default value if it's impossible to read int number from string
-			if (deriv_width == -1)
+			if (deriv_width == (size_t) -1)
 				deriv_threshold = 2;
 			else
 				is_deriv_width = true;
@@ -309,10 +309,10 @@ void Configuration::command_line(int argc, char** argv)
 		}
 		else if (name == "median_width")
 		{
-			median_width = my_stoi(value, i);
+			median_width = (size_t) my_stoi(value, i);
 
 			// use default value if it's impossible to read int number from string
-			if (median_width == -1)
+			if (median_width == (size_t) -1)
 				median_width = 1;
 			else
 				is_median_width = true;

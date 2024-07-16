@@ -20,7 +20,7 @@ class Raw_profile
         Raw_profile(std::string);
 
         Session_info session_info{};
-        vector<vector<double>> mean_signal_per_chanel;
+        vector<vector<double>> mean_signal_per_channel;
 
     private:
         int OBS_SIZE;

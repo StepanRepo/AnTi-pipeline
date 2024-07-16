@@ -22,7 +22,7 @@ class Configuration
 		bool get_fr;
 
 		double deriv_threshold, median_threshold;
-		int deriv_width, median_width;
+		size_t deriv_width, median_width;
 
 		int num_files;
 		vector<string> files;

@@ -12,6 +12,8 @@ using namespace std;
 
 template<typename T> size_t max_pos(vector<T>& vec)
 {
+// find the position of maximum of the given vector
+
 	size_t pos = 0;
 	T value = vec.at(0);
 
@@ -31,6 +33,8 @@ template<typename T> size_t max_pos(vector<T>& vec)
 
 template<typename T> T max(vector<T>& vec)
 {
+// find the value of maximum of the given vector
+
 	T value = vec.at(0);
 	size_t n = vec.size();
 
@@ -47,6 +51,8 @@ template<typename T> T max(vector<T>& vec)
 
 template<typename T> size_t min_pos(vector<T>& vec)
 {
+// find the position of minimum of the given vector
+
 	size_t pos = 0;
 	double value = vec.at(0);
 
@@ -66,6 +72,8 @@ template<typename T> size_t min_pos(vector<T>& vec)
 
 template<typename T> T min(vector<T>& vec)
 {
+// find the value of minimum of the given vector
+
 	T value = vec.at(0);
 	size_t n = vec.size();
 
@@ -84,6 +92,8 @@ template<typename T> T min(vector<T>& vec)
 
 int normilize_vector (vector<double>& vec)
 {
+// normilize vector so that its maximum equals 1 and minimum equals 0
+
 	double min_ = min(vec);
 	double max_ = max(vec);
 	double norm_factor = max_ - min_;
@@ -103,6 +113,8 @@ int normilize_vector (vector<double>& vec)
 
 double median (vector<double>& vec, size_t begin, size_t end)
 {
+// find median of given array
+
 	if (end >= vec.size() || end == 0) 
 		end = vec.size() - 1;
 
@@ -122,6 +134,8 @@ double median (vector<double>& vec, size_t begin, size_t end)
 
 double mean (vector<double>& vec, size_t begin, size_t end)
 {
+// find mean value of given array
+
 	if (end >= vec.size() || end == 0) 
 		end = vec.size() - 1;
 
@@ -137,6 +151,8 @@ double mean (vector<double>& vec, size_t begin, size_t end)
 
 double sum (vector<double>& vec, size_t begin, size_t end)
 {
+// find sum of given array
+
 	if (end >= vec.size() || end == 0) 
 		end = vec.size() - 1;
 
@@ -152,6 +168,8 @@ double sum (vector<double>& vec, size_t begin, size_t end)
 
 double sigma(vector<double>& vec, size_t begin, size_t end)
 {
+// find standart deviation of given array
+
 	if (end >= vec.size() || end == 0) 
 		end = vec.size() - 1;
 
@@ -176,6 +194,8 @@ double sigma(vector<double>& vec, size_t begin, size_t end)
 
 double cycle_discrete_ccf (vector<double>& first, vector<double>& second, int delta)
 {
+// find ccf of two given array with cycle transit across the obsevational window
+
 	int size_f = first.capacity();
 	int size_s = second.capacity();
 
@@ -203,6 +223,8 @@ double cycle_discrete_ccf (vector<double>& first, vector<double>& second, int de
 
 double discrete_ccf (vector<double>& first_in, vector<double>& second, int delta)
 {
+// find ccf of two given array with partical crossing of them
+
 	int size_f = first_in.capacity();
 	int size_s = second.capacity();
 
@@ -260,6 +282,8 @@ double discrete_ccf (vector<double>& first_in, vector<double>& second, int delta
 
 vector<double> interpolation4 (vector<double> f)
 {
+// calculate coefficients of interpolation polynomial of 4th degree
+
 	if (f.size() != 5)
 		cout << "INTERPOLATION ERROR " << f.size() << endl;
 
@@ -277,6 +301,9 @@ vector<double> interpolation4 (vector<double> f)
 
 double horner (vector<double>& p, double x)
 {
+// find value of polynomial at given point
+// using horner algorithm (see wiki)
+
 	double sum = 0.0;
 	int n = p.size();
 
@@ -290,6 +317,8 @@ double horner (vector<double>& p, double x)
 
 double find_root (vector<double> p, double left, double right)
 {
+// find a root of polynomial in the given range using bisection algorithm
+
 	if (horner(p, left) * horner(p, right) > 0)
 		throw invalid_argument (string(WARNING) + "Cann't find root");
 
@@ -320,6 +349,8 @@ double SNR(vector<double>& vec)
 	// normalized vectors
 	// i.e. max(vec) = 1 
 	//
+	// we consider all points above level of 0.1 as signal 
+	// and under as noise
 	size_t n = vec.size();
 
 	vector<double> noise, signal_sq;
@@ -327,6 +358,8 @@ double SNR(vector<double>& vec)
 	signal_sq.reserve(n);
 
 
+	// split the series to signal and noise arrays
+	// and write squares of this points
 	for (size_t i = 0; i < n; ++i)
 	{
 		if (vec.at(i) < .1)
@@ -343,30 +376,35 @@ double SNR(vector<double>& vec)
 
 void move_continous(vector<double>& vec, double bias)
 {
+// continually move the array using cycle moving between sequential profiles
+
 	if (bias < 0.0)
 		bias += (double) vec.size();
 
+	// find integer and fraction part of needed bias
 	int delta_int = int(bias);
 	double delta_dec = bias - double(delta_int);
-	delta_dec = 0.0;
 
+	// declare temporal vectors for profiles
 	int n = vec.size();
 	vector<double> temp_1 (n), temp_2(n);
 
 
+	// move profile on discrete number of steps
 	for (int j = 0; j < n; j ++)
 	{
-		temp_1[j] = vec[(j + delta_int) % n];
-		temp_2[j] = vec[(j + delta_int + 1) % n];
+		temp_1.at(j) = vec.at((j + delta_int) % n);
+		temp_2.at(j) = vec.at((j + delta_int + 1) % n);
 	}
 
+	// specify the bias on continous value (move less then on 1 step) 
 	for(int j = 0; j < n; j++)
 		vec[j] = (1.0 - delta_dec)*temp_1[j] + delta_dec*temp_2[j];
 }
 
 
 
-
+// declare template functions for all needed formats
 template size_t max_pos(vector<double>& vec);
 template size_t max_pos(vector<long double>& vec);
 template size_t max_pos(vector<int>& vec);

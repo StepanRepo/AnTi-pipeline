@@ -18,7 +18,7 @@ class Int_profile
         Session_info session_info;
 
         std::vector<double> profile;
-	std::vector<std::vector<double>> compensated_signal_per_chanel;
+	std::vector<std::vector<double>> compensated_signal_per_channel;
 
 
 	long double get_TOA(Etalon_profile&);
@@ -34,10 +34,9 @@ class Int_profile
 
     private:
 
-        void calculate_chanel_delay (std::vector<double> & chanel_delay);
-        void move_chanel_profiles(Raw_profile* raw, std::vector<double>& chanel_delay);
-        void average_profiles();
-        void average_profiles(std::vector<double> mask);
+        void calculate_channel_delay (std::vector<double> & channel_delay);
+        void move_channel_profiles(Raw_profile* raw, std::vector<double>& channel_delay);
+        void average_profiles(std::vector<double>* mask = nullptr);
         void normilize_profile();
 
 	double freq_comp; 
