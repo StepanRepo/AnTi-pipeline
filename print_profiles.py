@@ -27,9 +27,10 @@ def save_image(filename):
 if __name__ == "__main__":
 
     wd = Path("./out")
-    prf_list = list(wd.glob("*.prf"))
+    prf_list = list(wd.glob("*.prf"))[:100]
 
-    for k, prf_file in enumerate(prf_list):
+    for prf_file in prf_list:
+
         with open(str(prf_file)) as prf:
 
             numpar = int(prf.readline().split()[1])
@@ -46,9 +47,12 @@ if __name__ == "__main__":
                 t[i] = np.float64(s[0])
                 x[i] = np.float16(s[1])
 
+            x = (x - x.min()) / (x.max() - x.min())
+
             plt.figure()
             plt.grid()
             plt.plot(t, x)
+            plt.ylim(0, 1)
             plt.text(0, 1, str(prf_file.name))
 
         #plt.show()

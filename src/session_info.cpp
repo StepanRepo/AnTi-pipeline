@@ -84,8 +84,12 @@ Session_info::Session_info(string file_name, bool binary) : start_date (0, 0, 0,
 		}
 		
 		if (name == "name")
-			psr_name = value;
+		{
+			if (value.size() > 8)
+				value = value.substr(0, 8);
 
+			psr_name = value;
+		}
 		else if (name == "date")
 			start_date_s = value;
 
@@ -110,10 +114,10 @@ Session_info::Session_info(string file_name, bool binary) : start_date (0, 0, 0,
 		else if(name == "dm")
 			dm = stod(value);
 
-		else if(name == "freq0" || name == "F0")
+		else if(name == "freq0" || name == "F0" || name == "Fmin")
 			freq_min = stod(value);
 
-		else if(name == "freq511" || name == "F511")
+		else if(name == "freq511" || name == "F511" || name == "Fmax")
 			freq_max = stod(value);
 
 		else if (name == "dt_utc")
@@ -124,8 +128,10 @@ Session_info::Session_info(string file_name, bool binary) : start_date (0, 0, 0,
 
 	chanels = 512;
 
-	if (start_utc_s == "")
+	if (start_date_s == "")
+		start_date_s = "00.00.00 00:00:00 0000000";
 
+	if (start_utc_s == "")
 		throw invalid_argument(string(ERROR) + "There is no utc time in observation file " + file_name);
 
 	start_date = Custom_time(start_date_s);
