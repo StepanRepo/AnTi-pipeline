@@ -5,6 +5,10 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 
+import argparse
+import os
+
+
 def save_image(filename):
 	# PdfPages is a wrapper around pdf
 	# file so there is no clash and create
@@ -26,10 +30,39 @@ def save_image(filename):
 
 if __name__ == "__main__":
 
-    wd = Path("./out")
+    parser = argparse.ArgumentParser(description = "Plot .prf files from given directory into a pdf file")
+
+    parser.add_argument("directory", type = str, nargs="?", default = ".",
+                    help="Directory with profiles")
+
+    parser.add_argument("num", type = int, nargs="?", default = None,
+                    help="Number of printed profiles")
+
+    parser.add_argument("-names", action = 'store_true', 
+                        help = "Print file names if the parametrer was set")
+
+    args = parser.parse_args()
+
+
+    wd = Path(args.directory)
+
+    if not os.path.isdir(wd):
+        print(f"No such directory; {args.directory}")
+        exit(0)
+
     prf_list = list(wd.glob("*.prf"))
 
-    for k, prf_file in enumerate(prf_list):
+    if (args.num is not None) and (args.num < len(prf_list)):
+            prf_list = prf_list[:args.num]
+
+    if args.names:
+        names_file = open("./names.txt", "w")
+
+    for prf_file in prf_list:
+
+        if args.names:
+            names_file.write(f"{prf_file.name}\n")
+
         with open(str(prf_file)) as prf:
 
             numpar = int(prf.readline().split()[1])
@@ -46,10 +79,21 @@ if __name__ == "__main__":
                 t[i] = np.float64(s[0])
                 x[i] = np.float16(s[1])
 
+            x = (x - x.min()) / (x.max() - x.min())
+
             plt.figure()
             plt.grid()
             plt.plot(t, x)
-            plt.text(0, 1, str(prf_file.name))
+
+            plt.ylim(0, 1)
+
+            plt.title(str(prf_file.name))
+            plt.ylabel("Power []")
+            plt.xlabel("Time [ms]")
 
         #plt.show()
-    save_image("profiles.pdf")
+    save_image(os.getcwd() + "/profiles.pdf")
+
+    if args.names:
+        names_file.close()
+
