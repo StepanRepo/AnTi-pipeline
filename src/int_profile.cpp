@@ -114,6 +114,7 @@ Int_profile::Int_profile (string file_name) : session_info(file_name, false)
 	// normilize this profile so that its maximum equals 1 and minimum equals 0
 	normilize_profile();
 
+
 	// set default values to variables until they are needed
 	toa = 0.0l;
 	toa_error = 0.0l;
@@ -176,8 +177,9 @@ void Int_profile::move_channel_profiles(Raw_profile* raw, std::vector<double>& c
 
 	// temporal vectors for profiles
 	vector<double> temp_1, temp_2;
-	temp_1.reserve(obs_window);
-	temp_2.reserve(obs_window);
+	temp_1 = vector<double>(obs_window);
+	temp_2 = vector<double>(obs_window);
+
 
 	// this variable is new coordinate of point after moving
 	double bias;
@@ -220,6 +222,7 @@ void Int_profile::move_channel_profiles(Raw_profile* raw, std::vector<double>& c
 			temp_1.at(j) = raw->mean_signal_per_channel.at(i).at((j + delta_int) % obs_window);
 			temp_2.at(j) = raw->mean_signal_per_channel.at(i).at((j + delta_int + 1) % obs_window);
 		}
+
 
 		// specify the bias on continous value (move less then on 1 step) 
 		for(size_t j = 0; j < obs_window; ++j)
@@ -422,18 +425,17 @@ double Int_profile::get_ERROR()
 		++i;
 	}
 
-	//toa_error = 0.3*double(k2-k1)*session_info.get_TAU()/get_SNR();	
 
 	// error formula from "Binary and millisecond pulsars"
 	toa_error = 1.0/get_SNR() /
 		sqrt(session_info.get_FREQ_MAX() - session_info.get_FREQ_MIN()) /
 		sqrt(session_info.get_PSR_PERIOD() * session_info.get_TOTAL_PULSES()) *
 		pow((k2-k1) * session_info.get_TAU()*1e-3/session_info.get_PSR_PERIOD(), 1.5) *
-		session_info.get_PSR_PERIOD() * 1e6;
+		session_info.get_PSR_PERIOD() * 1e3;
 
 	// if error is more than 1 ms than we set it to .999 ms
 	// to format the output
-	if (toa_error > 1.0) toa_error = 0.999;
+	if (toa_error > 1.0) toa_error = .999;
 
 	if (cfg->verbose)
 		cout << OK << endl;
@@ -476,7 +478,7 @@ void Int_profile::read_freq_comp (string file_name)
 		{
 			try
 			{
-				freq_comp = stod(buffer.substr(buffer.find(' ') + 1)) * 1e-3;
+				freq_comp = stod(buffer.substr(buffer.find(' ') + 1));// * 1e-3;
 			}
 			catch (const invalid_argument &err)
 			{

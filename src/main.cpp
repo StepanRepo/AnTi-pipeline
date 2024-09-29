@@ -261,11 +261,21 @@ int main (int argc, char *argv[])
 			if (cfg->verbose)
 				cout << endl << BOLD << "Processing of file: " << file_name << RESET << endl;
 
+			long double toa;
+			double toa_error;
 			// try to get integral profile from file file_name
 			// and skip this file if smth gone wrong
 			try
 			{
 				int_prf = get_int_prf(file_name);
+
+				// calculate TOA and its error
+				toa = int_prf->get_TOA(*etalon_prf);
+				toa_error = int_prf->get_ERROR();
+
+				// print TOA into the resulring file in ITOA format
+				// (see tempo2 manual)
+				int_prf->ITOA();
 			}
 			catch (const invalid_argument &err)
 			{
@@ -279,13 +289,6 @@ int main (int argc, char *argv[])
 			}
 
 
-			// calculate TOA and its error
-			long double toa = int_prf->get_TOA(*etalon_prf);
-			double toa_error = int_prf->get_ERROR();
-
-			// print TOA into the resulring file in ITOA format
-			// (see tempo2 manual)
-			int_prf->ITOA();
 
 			// print some information about current results of processing
 			if (cfg->verbose)

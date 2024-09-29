@@ -368,8 +368,10 @@ double SNR(vector<double>& vec)
 			signal_sq.push_back(vec.at(i) * vec.at(i));
 	}
 
-	double signal_power = sqrt(sum(signal_sq));
+	if (signal_sq.size() == 0l || noise.size() < 5l)
+		return 1e-5;
 
+	double signal_power = sqrt(sum(signal_sq));
 
 	return signal_power/sigma (noise);
 }
