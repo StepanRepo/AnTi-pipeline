@@ -267,11 +267,12 @@ void Raw_profile::split_data (double* signal)
 
 		for (size_t imp = 0; imp < (size_t) total_pulses - 1; ++imp)
 		{
+
 			for (size_t k = 0; k < obs_window; ++k)
 			{
 				for (size_t i = 0; i < channels; ++i)
 				{
-					arg = i + (k + obs_window*imp - int (1.5*dP*imp))*512ul; 
+					arg = i + (k + obs_window*imp + int (.5+dP*imp))*512ul; 
 
 					// check if smth wrong with the length of the file
 					if (arg > (size_t) OBS_SIZE*2)
@@ -282,6 +283,7 @@ void Raw_profile::split_data (double* signal)
 			}
 		}
 	}
+
 
 
 	if (cfg->verbose)
