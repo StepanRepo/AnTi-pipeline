@@ -7,6 +7,9 @@
 #include<vector>
 #include<algorithm>
 #include <sys/stat.h>
+#include <filesystem>
+namespace fs = std::filesystem;
+
 
 
 Configuration::Configuration(string file_name)
@@ -42,13 +45,27 @@ Configuration::Configuration(string file_name)
 	}
 
 
-	// section for checking if parameters without default values were set
 	if (!is_files)
 	{
-		cout << ERROR << "List of files is empty. There is no default value. Exiting" << endl;
-		exit (0);
+		cout << WARNING << "List of files is empty. Using all files from directory: " << rawdata_dir << endl;
+
+		string filename;
+
+		cout << rawdata_dir << endl;
+		
+
+		for (const auto & entry : fs::directory_iterator(rawdata_dir))
+		{
+			filename = entry.path().filename();
+
+			if (entry.path() != tplfile)
+				files.push_back(filename);
+
+
+		}
 	}
 
+	// section for checking if parameters without default values were set
 	if (!is_tplfile and !do_tpl)
 	{
 		cout << ERROR << "TPL file wasn't set. There is no default value. Exiting" << endl;
@@ -209,6 +226,13 @@ void Configuration::fill_config(string file_name)
 			{
 
 				line.erase(remove_if(line.begin(), line.end(), ::isspace), line.end());
+
+				if (line.substr(0, 1) == "#" 
+						|| line.substr(0, 1) == "\n")
+				{
+					continue;	
+				}
+
 				files.push_back(line);
 
 				i++;
@@ -216,7 +240,9 @@ void Configuration::fill_config(string file_name)
 					break;
 			}
 
-			is_files = true;
+			if (files.size() > 0)
+				is_files = true;
+
 			break;
 		}
 		else 

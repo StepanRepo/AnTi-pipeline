@@ -234,25 +234,6 @@ void Int_profile::move_channel_profiles(Raw_profile* raw, std::vector<double>& c
 
 	if (cfg->verbose)
 		cout << OK << endl;
-
-
-	/*
-	ofstream file("123.dat");
-
-	file << channels << " " << obs_window << " " << session_info.get_TAU() << " " <<  endl;
-
-	for (size_t i = 0; i < channels; ++i)
-	{
-		for (size_t k = 0; k < obs_window; ++k)
-		{
-			file << compensated_signal_per_channel[i][k] << " ";
-		}
-
-		file << endl;
-	}
-
-	file.close();
-	*/
 }
 
 

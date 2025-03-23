@@ -279,12 +279,13 @@ void Raw_profile::split_data (double* signal)
 						cout << "bad news:  " << arg << "   " << OBS_SIZE*2 << endl;
 
 					mean_signal_per_channel[i][k] += signal[arg];
+
+
 				}
+
 			}
 		}
 	}
-
-
 
 	if (cfg->verbose)
 		cout << OK << endl;
