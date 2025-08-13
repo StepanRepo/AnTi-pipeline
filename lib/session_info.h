@@ -35,6 +35,7 @@ public:
 	string get_SUMCHAN();
 	double get_FREQ_MIN();
 	double get_FREQ_MAX();
+	double get_SNR();
 	size_t get_CHANELS();
 
 	void set_TOTAL_PULSES(size_t);
@@ -59,6 +60,7 @@ private:
 	string sumchan;
 	double freq_min, freq_max;
 	size_t chanels;
+	double SNR;
 };
 
 

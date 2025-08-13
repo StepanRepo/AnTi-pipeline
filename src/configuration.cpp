@@ -50,8 +50,6 @@ Configuration::Configuration(string file_name)
 		cout << WARNING << "List of files is empty. Using all files from directory: " << rawdata_dir << endl;
 
 		string filename;
-
-		cout << rawdata_dir << endl;
 		
 
 		for (const auto & entry : fs::directory_iterator(rawdata_dir))

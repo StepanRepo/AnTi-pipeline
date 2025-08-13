@@ -62,7 +62,11 @@ Int_profile::Int_profile(Raw_profile& raw, vector<double>* mask) : session_info(
 	toa = 0.0l;
 	toa_error = 0.0l;
 
-	snr = get_SNR();
+	if (session_info.get_SNR() < 0.0)
+		snr = get_SNR();
+	else
+		snr = session_info.get_SNR();
+
 }
 
 
@@ -119,8 +123,10 @@ Int_profile::Int_profile (string file_name) : session_info(file_name, false)
 	toa = 0.0l;
 	toa_error = 0.0l;
 
-	snr = 0.0;
-	snr = get_SNR();
+	if (session_info.get_SNR() < 0.0)
+		snr = get_SNR();
+	else
+		snr = session_info.get_SNR();
 }
 
 void Int_profile::calculate_channel_delay(vector<double>& channel_delay)
@@ -427,7 +433,8 @@ double Int_profile::get_ERROR()
 
 
 	// error formula from "Binary and millisecond pulsars"
-	toa_error = 1.0/get_SNR() /
+	// NOTE: The error unit is ms!
+	toa_error = 1.0/snr /
 		sqrt(session_info.get_FREQ_MAX() - session_info.get_FREQ_MIN()) /
 		sqrt(session_info.get_PSR_PERIOD() * session_info.get_TOTAL_PULSES()) *
 		pow((k2-k1) * session_info.get_TAU()*1e-3/session_info.get_PSR_PERIOD(), 1.5) *

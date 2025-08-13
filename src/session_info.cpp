@@ -28,6 +28,7 @@ Session_info::Session_info() : start_date (0, 0, 0, 0, 0, 0l), start_utc (0, 0, 
 	total_pulses = -1;
 
 	tau = -1.0;
+	SNR = -1.0;
 	obs_window = -1;
 	sumchan = "";
 	freq_min = -1.0;
@@ -82,6 +83,7 @@ Session_info::Session_info(string file_name, bool binary) : start_date (0, 0, 0,
 			getline (obs_file, buffer_s);
 			str_split(buffer_s, name, value);
 		}
+
 		
 		if (name == "name")
 		{
@@ -122,6 +124,9 @@ Session_info::Session_info(string file_name, bool binary) : start_date (0, 0, 0,
 
 		else if (name == "dt_utc")
 			start_utc_s = value;
+
+		else if (name == "SNR")
+			SNR = stod(value);
 	}
 
 	obs_file.close();
@@ -270,6 +275,7 @@ size_t Session_info::get_NUM_PARAMS() {return number_params;}
 string Session_info::get_PSR_NAME() {return psr_name;}
 long double Session_info::get_PSR_PERIOD() {return psr_period;}
 double Session_info::get_DM() {return dm;}
+double Session_info::get_SNR() {return SNR;}
 
 Custom_time Session_info::get_START_DATE() 
 {
